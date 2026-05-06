@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lumina Literature — Marketplace · Medical Wing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">Lumina Literature</div>
+      <nav class="topnav">
+        <a href="index.html">Archives</a>
+        <a href="marketplace.html" class="active">Curations</a>
+        <a href="librarian.html">Atelier</a>
+      </nav>
+      <div class="topbar-right">
+        <input class="search" placeholder="Search the archives" />
+        <button class="icon-btn" aria-label="theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <button class="icon-btn" aria-label="menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="side-section">
+        <div class="side-title">Wings</div>
+        <ul class="side-list">
+          <li class="side-item rare"><span class="dot"></span>Rare Editions</li>
+          <li class="side-item medical active"><span class="dot"></span>Medical</li>
+          <li class="side-item philosophy"><span class="dot"></span>Philosophy</li>
+          <li class="side-item scifi"><span class="dot"></span>Sci-Fi</li>
+        </ul>
+      </div>
+      <div class="side-section">
+        <div class="side-title">Filters</div>
+        <ul class="side-list">
+          <li class="side-item"><span class="dot"></span>Featured</li>
+          <li class="side-item"><span class="dot"></span>New Acquisitions</li>
+          <li class="side-item"><span class="dot"></span>Curator's Picks</li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="page-head reveal" data-reveal>
+        <div>
+          <h1>The Medical Wing</h1>
+          <p>Explore the evolution of anatomical understanding and clinical wisdom through our curated medical collection.</p>
+        </div>
+        <a class="more" href="#">View full archive →</a>
+      </header>
+
+      <section class="feature-row">
+        <article class="feature-card reveal" data-reveal>
+          <div class="bg" style="background:
+            radial-gradient(600px 300px at 30% 40%, rgba(78,163,160,0.35), transparent 60%),
+            linear-gradient(135deg, #0a2230, #06131c)"></div>
+          <div class="scrim"></div>
+          <div class="meta">
+            <div class="tag">Collection · Folio</div>
+            <h2>Anatomia Universale</h2>
+            <div class="by">Berto Mascagni · 14 plates</div>
+          </div>
+        </article>
+        <aside class="notes-card reveal" data-reveal>
+          <h3>Curator's Notes</h3>
+          <p>This collection traces the intricate dialogue between art and science — illustrated dissections that reveal the body as both mechanism and metaphor.</p>
+          <div class="price">
+            <div class="num">$120<span style="font-size: 12px; color: var(--ink-mute); margin-left:6px;">per vol.</span></div>
+            <div class="label">Limited · 36/120</div>
+          </div>
+        </aside>
+      </section>
+
+      <div class="section-head reveal" data-reveal>
+        <h2>Catalog Entries</h2>
+        <a class="more" href="#">A → Z</a>
+      </div>
+      <div class="catalog">
+        <article class="book reveal" data-reveal>
+          <div class="cover" style="background:
+            radial-gradient(400px 200px at 50% 30%, rgba(78,163,160,0.4), transparent),
+            linear-gradient(135deg, #0e2735, #06131c);"></div>
+          <h4>Modern Pathology</h4>
+          <div class="sub">Vol. III · 2025</div>
+          <div class="row">
+            <div class="price-tag">$84</div>
+            <button class="add">Add</button>
+          </div>
+        </article>
+        <article class="book reveal" data-reveal>
+          <div class="cover" style="background:
+            radial-gradient(300px 200px at 50% 30%, rgba(140,90,200,0.35), transparent),
+            linear-gradient(135deg, #1a1230, #07131c);"></div>
+          <h4>Clinical Neurology</h4>
+          <div class="sub">Vol. I · 2024</div>
+          <div class="row">
+            <div class="price-tag">$120</div>
+            <button class="add">Add</button>
+          </div>
+        </article>
+        <article class="book reveal" data-reveal>
+          <div class="cover" style="background:
+            radial-gradient(400px 200px at 50% 35%, rgba(214,178,122,0.35), transparent),
+            linear-gradient(135deg, #2a1d10, #08131a);"></div>
+          <h4>Therapeutic Foundations</h4>
+          <div class="sub">Vol. II · 2024</div>
+          <div class="row">
+            <div class="price-tag">$210</div>
+            <button class="add">Add</button>
+          </div>
+        </article>
+        <article class="book reveal" data-reveal>
+          <div class="cover" style="background:
+            radial-gradient(400px 220px at 50% 35%, rgba(78,163,160,0.5), transparent),
+            linear-gradient(135deg, #112535, #07131c);"></div>
+          <h4>Human Kinetics</h4>
+          <div class="sub">Vol. IV · 2025</div>
+          <div class="row">
+            <div class="price-tag">$96</div>
+            <button class="add">Add</button>
+          </div>
+        </article>
+      </div>
+
+      <p class="divider-quote reveal" data-reveal>
+        “The body is a manuscript, and every wound a marginalia.”<br />— Lumina Editorial, 2025
+      </p>
+
+      <footer class="footer">
+        <div>Lumina Literature · © 2026, all rights reserved</div>
+        <div class="links">
+          <a href="#">The Atelier</a>
+          <a href="#">Editorial Lineage</a>
+          <a href="#">Contact</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

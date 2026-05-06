@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lumina Literature — Hero Landing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">Lumina Literature</div>
+      <nav class="topnav">
+        <a href="index.html" class="active">Archives</a>
+        <a href="marketplace.html">Curations</a>
+        <a href="librarian.html">Atelier</a>
+      </nav>
+      <div class="topbar-right">
+        <input class="search" placeholder="Search the archives" />
+        <button class="icon-btn" aria-label="theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <button class="icon-btn" aria-label="menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="side-section">
+        <div class="side-title">Archives</div>
+        <ul class="side-list">
+          <li class="side-item active"><span class="dot"></span>Hero Landing</li>
+          <li class="side-item"><span class="dot"></span>Trending Volumes</li>
+          <li class="side-item"><span class="dot"></span>Curated Segments</li>
+        </ul>
+      </div>
+      <div class="side-section">
+        <div class="side-title">Wings</div>
+        <ul class="side-list">
+          <li class="side-item rare"><span class="dot"></span>Rare Editions</li>
+          <li class="side-item medical"><span class="dot"></span>Medical Wing</li>
+          <li class="side-item philosophy"><span class="dot"></span>Philosophy</li>
+          <li class="side-item scifi"><span class="dot"></span>Sci-Fi Archives</li>
+        </ul>
+      </div>
+      <div class="side-section">
+        <div class="side-title">Atelier</div>
+        <ul class="side-list">
+          <li class="side-item"><span class="dot"></span>The Librarian's Study</li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-illustration" aria-hidden="true"></div>
+        <div class="reveal" data-reveal>
+          <div class="eyebrow">Volume II — Infinity</div>
+        </div>
+        <h1 class="reveal" data-reveal>
+          Discover stories<br />that <em>stay with you</em>
+        </h1>
+        <p class="lede reveal" data-reveal>
+          Step into a curated digital sanctuary where every page is a masterpiece and
+          every interaction is a cinematic journey through the archives of human thought.
+        </p>
+        <div class="cta-row reveal" data-reveal>
+          <a class="btn btn-primary" href="marketplace.html">Enter the archive</a>
+          <a class="btn btn-ghost" href="#trending">Browse index</a>
+        </div>
+      </section>
+
+      <section class="section" id="trending">
+        <div class="section-head reveal" data-reveal>
+          <h2>Trending Volumes</h2>
+          <a href="marketplace.html" class="more">View full catalog →</a>
+        </div>
+        <div class="trending">
+          <article class="volume-card reveal" data-reveal>
+            <div class="bg" style="background:
+              radial-gradient(800px 300px at 30% 30%, rgba(214,178,122,0.4), transparent 60%),
+              linear-gradient(135deg, #2a1a08, #08131a 70%);"></div>
+            <div class="meta">
+              <span class="tag">Manuscript Collection</span>
+              <h3>The Echoes of Eternal Silence</h3>
+              <p>A deep dive into the philosophy of isolation in the digital age. Curated by Aliza Thomas.</p>
+              <div class="curator">★ Featured · 12 min read</div>
+            </div>
+          </article>
+          <article class="volume-card reveal" data-reveal>
+            <div class="bg" style="background:
+              radial-gradient(500px 300px at 70% 40%, rgba(78,163,160,0.35), transparent 60%),
+              linear-gradient(135deg, #0c2330, #06131c 70%);"></div>
+            <div class="meta">
+              <span class="tag">Reflection</span>
+              <h3>Metaphysics of Light</h3>
+              <p>Redefining the boundaries of perception and reality.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head reveal" data-reveal>
+          <h2>Curated Segments</h2>
+        </div>
+        <div class="curated">
+          <div class="reveal" data-reveal>
+            <div class="curated-intro">
+              <p>Explore our deep library across thoughtfully categorized segments, each designed to provide a specific emotional and intellectual experience.</p>
+            </div>
+            <ul class="curated-list">
+              <li class="rare">Rare Editions</li>
+              <li class="medical">Medical Journals</li>
+              <li class="philosophy">Philosophy</li>
+              <li class="scifi">Sci-Fi Archives</li>
+            </ul>
+          </div>
+          <div class="curated-grid">
+            <div class="thumb reveal" data-reveal style="background-image: linear-gradient(135deg,#1a2230,#06121a), url('https://images.unsplash.com/photo-1532012197267-da84d127e765?w=600&q=70'); background-blend-mode: overlay;"></div>
+            <div class="thumb reveal" data-reveal style="background-image: linear-gradient(135deg,#0a1820,#06121a), url('https://images.unsplash.com/photo-1578357078586-491adf1aa5ba?w=600&q=70'); background-blend-mode: overlay;"></div>
+            <div class="thumb reveal" data-reveal style="background-image: linear-gradient(135deg,#0a1820,#06121a), url('https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=70'); background-blend-mode: overlay;"></div>
+            <div class="thumb reveal" data-reveal style="background-image: linear-gradient(135deg,#0a1820,#06121a), url('https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?w=600&q=70'); background-blend-mode: overlay;"></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>Lumina Literature · © 2026, all rights reserved</div>
+        <div class="links">
+          <a href="#">The Atelier</a>
+          <a href="#">Editorial Lineage</a>
+          <a href="#">Contact</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
