@@ -10,12 +10,12 @@ const mm = gsap.matchMedia();
 
 mm.add(
   {
-    isDesktop: '(min-width: 800px)',
-    isMobile: '(max-width: 799px)',
+    isDesktop: '(min-width: 900px)',
+    isMobile: '(max-width: 899px)',
     reduceMotion: '(prefers-reduced-motion: reduce)'
   },
   (ctx) => {
-    const { reduceMotion } = ctx.conditions;
+    const { isDesktop, reduceMotion } = ctx.conditions;
     const dur = reduceMotion ? 0 : 0.9;
 
     gsap.defaults({ ease: 'power2.out', duration: dur });
@@ -33,9 +33,14 @@ mm.add(
       );
     }
 
+    const trending = document.querySelector('.trending');
+    const trendingCards = trending ? gsap.utils.toArray('.volume-card', trending) : [];
+    const use3DStack = isDesktop && !reduceMotion && trendingCards.length >= 2;
+
     const others = gsap.utils
       .toArray('[data-reveal]')
-      .filter((el) => !hero || !hero.contains(el));
+      .filter((el) => !hero || !hero.contains(el))
+      .filter((el) => !(use3DStack && trending && trending.contains(el) && el.classList.contains('volume-card')));
 
     others.forEach((el) => {
       gsap.fromTo(
@@ -52,26 +57,52 @@ mm.add(
       const layer = card.querySelector('.bg, video.card-video');
       if (!layer) return;
       gsap.to(layer, {
-        yPercent: -10, scale: 1.06, ease: 'none',
+        yPercent: -10, scale: 1.08, ease: 'none',
         scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true }
       });
     });
 
-    gsap.utils.toArray('.volume-card').forEach((card, i) => {
-      gsap.fromTo(
-        card,
-        { autoAlpha: 0.35, y: 60, scale: 0.96 },
-        {
-          autoAlpha: 1, y: 0, scale: 1, ease: 'power2.out',
-          scrollTrigger: {
-            trigger: card,
-            start: 'top 90%',
-            end: 'top 45%',
-            scrub: 1
-          }
+    if (use3DStack) {
+      trending.classList.add('stack-3d');
+      const stackHeight = Math.max(...trendingCards.map((c) => c.offsetHeight), 380);
+      trending.style.height = stackHeight + 'px';
+
+      gsap.set(trendingCards[0], {
+        z: 0, rotationY: 0, rotationX: 0, scale: 1, autoAlpha: 1,
+        transformPerspective: 1500, transformOrigin: '50% 50%'
+      });
+      gsap.set(trendingCards[1], {
+        z: -520, rotationY: 32, rotationX: -3, scale: 0.86, autoAlpha: 0,
+        transformPerspective: 1500, transformOrigin: '50% 50%'
+      });
+
+      const tl = gsap.timeline({
+        defaults: { ease: 'power2.inOut' },
+        scrollTrigger: {
+          trigger: trending,
+          start: 'top 18%',
+          end: '+=140%',
+          scrub: 1.2,
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true
         }
-      );
-    });
+      });
+      tl.to(trendingCards[0], { z: -480, rotationY: -28, rotationX: 4, scale: 0.86, autoAlpha: 0 }, 0)
+        .to(trendingCards[1], { z: 0, rotationY: 0, rotationX: 0, scale: 1, autoAlpha: 1 }, 0);
+    } else if (trendingCards.length) {
+      trendingCards.forEach((card) => {
+        gsap.fromTo(
+          card,
+          { autoAlpha: 0.4, y: 40, scale: 0.96 },
+          {
+            autoAlpha: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out',
+            scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' }
+          }
+        );
+      });
+    }
 
     gsap.utils.toArray('video.card-video, video.hero-video').forEach((video) => {
       video.muted = true;
@@ -92,6 +123,13 @@ mm.add(
         el.addEventListener('mouseleave', () => gsap.to(el, { y: 0, duration: 0.25 }));
       });
     }
+
+    return () => {
+      if (trending) {
+        trending.classList.remove('stack-3d');
+        trending.style.height = '';
+      }
+    };
   }
 );
 

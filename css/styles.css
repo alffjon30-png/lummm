@@ -764,3 +764,21 @@ img, svg, video { max-width: 100%; height: auto; display: block; }
 .volume-card.has-video::before {
   background: linear-gradient(180deg, transparent 25%, rgba(7,18,26,0.85) 100%);
 }
+
+/* --- 3D pinned scroll-stack for Trending (desktop) --- */
+.trending.stack-3d {
+  display: block !important;
+  position: relative;
+  perspective: 1800px;
+  transform-style: preserve-3d;
+}
+.trending.stack-3d .volume-card {
+  position: absolute !important;
+  top: 0; left: 0; right: 0;
+  width: 100%;
+  margin: 0;
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
