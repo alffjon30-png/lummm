@@ -13,10 +13,26 @@ A cinematic, dark-themed web app for a curated literary archive — built as a s
 - Cormorant Garamond + Inter via Google Fonts
 
 ## Run
-Open `index.html` in a browser, or serve the folder:
+
+Install once:
+```bash
+npm install
+```
+
+Dev server with hot reload:
+```bash
+npm run dev      # http://localhost:5173
+```
+
+Production build + preview:
+```bash
+npm run build    # outputs to ./dist
+npm run preview  # serves ./dist
+```
+
+Or, with no Node at all, just serve the folder:
 ```bash
 python3 -m http.server 8080
-# then open http://localhost:8080
 ```
 
 ## Animations
