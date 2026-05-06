@@ -815,3 +815,49 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 }
 
 img, video { -webkit-user-drag: none; user-select: none; }
+
+/* --- Per-wing accent system --- */
+body { --wing: var(--medical); --wing-bg: rgba(78,163,160,0.12); --wing-border: rgba(78,163,160,0.32); }
+body.wing-medical    { --wing: #4ea3a0; --wing-bg: rgba(78,163,160,0.12);  --wing-border: rgba(78,163,160,0.32); }
+body.wing-rare       { --wing: #b88a52; --wing-bg: rgba(184,138,82,0.12);  --wing-border: rgba(184,138,82,0.32); }
+body.wing-philosophy { --wing: #a17ad1; --wing-bg: rgba(161,122,209,0.14); --wing-border: rgba(161,122,209,0.34); }
+body.wing-scifi      { --wing: #ec7d4a; --wing-bg: rgba(236,125,74,0.12);  --wing-border: rgba(236,125,74,0.32); }
+
+body.wing-rare .accent-pill,
+body.wing-philosophy .accent-pill,
+body.wing-scifi .accent-pill {
+  color: var(--wing); border-color: var(--wing);
+}
+body.wing-rare .accent-bar,
+body.wing-philosophy .accent-bar,
+body.wing-scifi .accent-bar {
+  background: linear-gradient(90deg, var(--wing) 0%, var(--wing) 35%, var(--line) 35%, var(--line) 100%);
+}
+body.wing-rare .feature-card .tag,
+body.wing-philosophy .feature-card .tag,
+body.wing-scifi .feature-card .tag,
+body.wing-rare .feature-card .tag.collector,
+body.wing-philosophy .feature-card .tag.collector,
+body.wing-scifi .feature-card .tag.collector {
+  color: var(--wing);
+}
+body.wing-rare .notes-card .head .ico,
+body.wing-philosophy .notes-card .head .ico,
+body.wing-scifi .notes-card .head .ico {
+  background: var(--wing-bg);
+  color: var(--wing);
+  border-color: var(--wing-border);
+}
+body.wing-rare .book .price-tag,
+body.wing-philosophy .book .price-tag,
+body.wing-scifi .book .price-tag {
+  color: var(--wing);
+}
+body.wing-rare .book .pill:not(.rare):not(.bestseller),
+body.wing-philosophy .book .pill:not(.rare):not(.bestseller),
+body.wing-scifi .book .pill:not(.rare):not(.bestseller) {
+  color: var(--wing); background: var(--wing-bg); border-color: var(--wing-border);
+}
+body.wing-rare .book.has-spark .spark,
+body.wing-philosophy .book.has-spark .spark,
+body.wing-scifi .book.has-spark .spark { color: var(--wing); }

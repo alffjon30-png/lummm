@@ -14,7 +14,10 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         marketplace: resolve(__dirname, 'marketplace.html'),
-        librarian: resolve(__dirname, 'librarian.html')
+        librarian: resolve(__dirname, 'librarian.html'),
+        rare: resolve(__dirname, 'rare.html'),
+        philosophy: resolve(__dirname, 'philosophy.html'),
+        scifi: resolve(__dirname, 'scifi.html')
       }
     }
   }

@@ -12,11 +12,20 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 
 ## Pages (entry points in `vite.config.js`)
 
-| File | Route | Description |
-|---|---|---|
-| `index.html` | `/` | Hero landing. **No sidebar.** Hero plays `/videos/3d-animation-of-the-library-scene-with-books-flyin.mp4`. Trending Volumes uses pinned 3D scroll-stack on desktop. Curated Segments uses arrow-row layout. |
-| `marketplace.html` | `/marketplace.html` | "The Medical Wing" with sidebar (Dr. Aris Thorne profile pinned at bottom), MEDICAL ACCENT pill, Anatomia Universale Collector's Highlight card, catalog with Medical/Rare/Bestseller pills, "Transitioning to Philosophy & Ethics" divider. |
-| `librarian.html` | `/librarian.html` | "The Librarian's Study" chat. Sidebar has The Archivist profile. Avatar-pill chat rows, white user bubble, suggestion chips, Library Aura panel with pulsing visual + Atmosphere/Intellectual Rigor/Chronology bars, Curator's Insight, Associated Themes pills. |
+| File | Route | Wing | Curator | Accent |
+|---|---|---|---|---|
+| `index.html` | `/` | — (hero landing) | — | gold |
+| `marketplace.html` | `/marketplace.html` | The Medical Wing | Dr. Aris Thorne · Senior Curator | `--medical` cyan |
+| `rare.html` | `/rare.html` | The Rare Editions Vault | Mme. Vivienne Aubert · Chief Archivist | `--rare` bronze |
+| `philosophy.html` | `/philosophy.html` | The Philosophy Rotunda | Prof. Adrien Lavoie · Emeritus Reader | `--philosophy` amethyst |
+| `scifi.html` | `/scifi.html` | The Speculative Wing | Dr. Kai Voronin · Speculative Curator | `--scifi` ember |
+| `librarian.html` | `/librarian.html` | The Librarian's Study (AI chat) | The Archivist · Deep Library Access | gold |
+
+**Index** has no sidebar; hero plays `/videos/3d-animation-of-the-library-scene-with-books-flyin.mp4`. Trending Volumes uses pinned 3D scroll-stack on desktop. Curated Segments uses arrow-row layout linking to each wing.
+
+**Wing pages** (marketplace / rare / philosophy / scifi) share a template: sidebar with `Segments` label + 4 cross-wing nav links + curator profile pinned at bottom; page head with accent pill ("Medical Accent: Cyan", "Philosophy · Amethyst" etc.) + accent bar; Collector's Highlight card with bespoke title/price/CTA; Curator's Notes card with stat row; 4-card catalog with type pills; "Transitioning to" divider linking the wings in a cycle (Medical → Philosophy & Ethics, Rare → Medical, Philosophy → Sci-Fi, Sci-Fi → Rare). The wing's accent color comes from `body.wing-{name}` setting `--wing`, `--wing-bg`, `--wing-border` CSS variables that everything wing-specific reads.
+
+**Librarian** (`librarian.html`) is the chat experience. Sidebar has The Archivist profile. Avatar-pill chat rows, white user bubble, suggestion chips, Library Aura panel with pulsing visual + Atmosphere/Intellectual Rigor/Chronology bars, Curator's Insight, Associated Themes pills.
 
 ## File map
 
@@ -24,8 +33,11 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 .
 ├── index.html              # Hero landing (no sidebar)
 ├── marketplace.html        # Medical Wing
+├── rare.html               # Rare Editions Vault
+├── philosophy.html         # Philosophy Rotunda
+├── scifi.html              # Speculative Wing
 ├── librarian.html          # Librarian's Study (chat)
-├── vite.config.js          # 3 entry points
+├── vite.config.js          # 6 entry points
 ├── package.json
 ├── css/styles.css          # Single stylesheet, layered sections (see below)
 ├── js/
