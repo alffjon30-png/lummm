@@ -1,5 +1,10 @@
-// Lumina Literature — GSAP animations
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { initHero3D } from './hero3d.js';
+
 gsap.registerPlugin(ScrollTrigger);
+
+initHero3D();
 
 const mm = gsap.matchMedia();
 
@@ -18,18 +23,29 @@ mm.add(
     const hero = document.querySelector('.hero');
     if (hero) {
       const heroItems = hero.querySelectorAll('[data-reveal]');
-      gsap.from(heroItems, {
-        autoAlpha: 0, y: 24, duration: dur, stagger: 0.12,
-        ease: 'power3.out', clearProps: 'all'
-      });
+      gsap.fromTo(
+        heroItems,
+        { autoAlpha: 0, y: 28 },
+        {
+          autoAlpha: 1, y: 0, duration: dur,
+          stagger: 0.12, ease: 'power3.out', delay: 0.15
+        }
+      );
     }
 
-    const others = gsap.utils.toArray('[data-reveal]').filter((el) => !hero || !hero.contains(el));
+    const others = gsap.utils
+      .toArray('[data-reveal]')
+      .filter((el) => !hero || !hero.contains(el));
+
     others.forEach((el) => {
-      gsap.from(el, {
-        autoAlpha: 0, y: 28, duration: dur, ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
-      });
+      gsap.fromTo(
+        el,
+        { autoAlpha: 0, y: 32 },
+        {
+          autoAlpha: 1, y: 0, duration: dur, ease: 'power3.out',
+          scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+        }
+      );
     });
 
     gsap.utils.toArray('.volume-card').forEach((card) => {
@@ -41,10 +57,12 @@ mm.add(
       });
     });
 
-    gsap.utils.toArray('.thumb, .book').forEach((el) => {
-      el.addEventListener('mouseenter', () => gsap.to(el, { y: -4, duration: 0.25 }));
-      el.addEventListener('mouseleave', () => gsap.to(el, { y: 0, duration: 0.25 }));
-    });
+    if (!reduceMotion) {
+      gsap.utils.toArray('.book, .thumb').forEach((el) => {
+        el.addEventListener('mouseenter', () => gsap.to(el, { y: -4, duration: 0.25 }));
+        el.addEventListener('mouseleave', () => gsap.to(el, { y: 0, duration: 0.25 }));
+      });
+    }
   }
 );
 
@@ -97,7 +115,7 @@ if (composer && promptInput && msgsEl) {
     node.className = `msg ${kind}`;
     node.innerHTML = `<div class="meta">${label}</div>${body}`;
     msgsEl.appendChild(node);
-    gsap.from(node, { autoAlpha: 0, y: 12, duration: 0.4, ease: 'power2.out', clearProps: 'all' });
+    gsap.from(node, { autoAlpha: 0, y: 12, duration: 0.4, ease: 'power2.out' });
     node.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 }
