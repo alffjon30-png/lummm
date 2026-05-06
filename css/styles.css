@@ -782,3 +782,36 @@ img, svg, video { max-width: 100%; height: auto; display: block; }
   backface-visibility: hidden;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
 }
+
+/* --- $10K polish: scroll progress, char reveal, focus --- */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 2px; transform: scaleX(0); transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--gold), var(--medical));
+  z-index: 100; pointer-events: none;
+  will-change: transform;
+}
+
+.hero h1 .char {
+  display: inline-block;
+  transform-origin: 50% 100% -8px;
+  will-change: transform, opacity;
+  perspective: 600px;
+}
+
+.hero h1 em .char { color: var(--gold); }
+
+a, button, input, .chip, .theme-pill, .side-link, .segment-row, .icon-btn {
+  outline: none;
+}
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.btn-light, .btn-ghost, .ask-librarian, .review-btn, .composer .send {
+  will-change: transform;
+}
+
+img, video { -webkit-user-drag: none; user-select: none; }

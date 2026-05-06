@@ -1,8 +1,65 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
 import { initHero3D } from './hero3d.js';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const reduceMotionGlobal = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!reduceMotionGlobal) {
+  const lenis = new Lenis({
+    duration: 1.15,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+    wheelMultiplier: 1,
+    touchMultiplier: 1.6
+  });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((time) => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+const progressBar = document.createElement('div');
+progressBar.className = 'scroll-progress';
+document.body.appendChild(progressBar);
+ScrollTrigger.create({
+  start: 0,
+  end: 'max',
+  onUpdate: (self) => {
+    progressBar.style.transform = `scaleX(${self.progress})`;
+  }
+});
+
+function splitChars(node) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent;
+    if (!text.trim()) return;
+    const frag = document.createDocumentFragment();
+    [...text].forEach((ch) => {
+      if (ch === ' ') {
+        frag.appendChild(document.createTextNode(' '));
+        return;
+      }
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = ch;
+      frag.appendChild(span);
+    });
+    node.replaceWith(frag);
+    return;
+  }
+  if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'BR') {
+    [...node.childNodes].forEach(splitChars);
+  }
+}
+
+const heroH1 = document.querySelector('.hero h1');
+if (heroH1 && !reduceMotionGlobal) {
+  [...heroH1.childNodes].forEach(splitChars);
+  gsap.set(heroH1.querySelectorAll('.char'), { autoAlpha: 0, y: 56, rotateX: -85 });
+}
 
 initHero3D();
 
@@ -22,15 +79,30 @@ mm.add(
 
     const hero = document.querySelector('.hero');
     if (hero) {
-      const heroItems = hero.querySelectorAll('[data-reveal]');
+      const heroItems = [...hero.querySelectorAll('[data-reveal]')].filter((el) => el.tagName !== 'H1');
       gsap.fromTo(
         heroItems,
         { autoAlpha: 0, y: 28 },
         {
           autoAlpha: 1, y: 0, duration: dur,
-          stagger: 0.12, ease: 'power3.out', delay: 0.15
+          stagger: 0.1, ease: 'power3.out', delay: 0.25
         }
       );
+
+      const heroH1 = hero.querySelector('h1');
+      if (heroH1 && !reduceMotion) {
+        const chars = heroH1.querySelectorAll('.char');
+        if (chars.length) {
+          gsap.to(chars, {
+            autoAlpha: 1, y: 0, rotateX: 0,
+            duration: 1.05, ease: 'power3.out',
+            stagger: { each: 0.022, from: 'start' },
+            delay: 0.45
+          });
+        } else {
+          gsap.fromTo(heroH1, { autoAlpha: 0, y: 32 }, { autoAlpha: 1, y: 0, duration: dur, delay: 0.4 });
+        }
+      }
     }
 
     const trending = document.querySelector('.trending');
@@ -121,6 +193,25 @@ mm.add(
       gsap.utils.toArray('.book, .thumb').forEach((el) => {
         el.addEventListener('mouseenter', () => gsap.to(el, { y: -4, duration: 0.25 }));
         el.addEventListener('mouseleave', () => gsap.to(el, { y: 0, duration: 0.25 }));
+      });
+
+      gsap.utils.toArray('.btn-light, .btn-ghost, .ask-librarian, .review-btn, .composer .send').forEach((btn) => {
+        const strength = btn.classList.contains('ask-librarian') || btn.classList.contains('send') ? 0.45 : 0.28;
+        let raf = null;
+        const onMove = (e) => {
+          if (raf) return;
+          raf = requestAnimationFrame(() => {
+            const rect = btn.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            gsap.to(btn, { x: x * strength, y: y * strength, duration: 0.4, ease: 'power3.out' });
+            raf = null;
+          });
+        };
+        btn.addEventListener('mousemove', onMove);
+        btn.addEventListener('mouseleave', () => {
+          gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.45)' });
+        });
       });
     }
 
