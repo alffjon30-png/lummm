@@ -49,11 +49,40 @@ mm.add(
     });
 
     gsap.utils.toArray('.volume-card').forEach((card) => {
-      const bg = card.querySelector('.bg');
-      if (!bg) return;
-      gsap.to(bg, {
-        yPercent: -8, ease: 'none',
+      const layer = card.querySelector('.bg, video.card-video');
+      if (!layer) return;
+      gsap.to(layer, {
+        yPercent: -10, scale: 1.06, ease: 'none',
         scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true }
+      });
+    });
+
+    gsap.utils.toArray('.volume-card').forEach((card, i) => {
+      gsap.fromTo(
+        card,
+        { autoAlpha: 0.35, y: 60, scale: 0.96 },
+        {
+          autoAlpha: 1, y: 0, scale: 1, ease: 'power2.out',
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 90%',
+            end: 'top 45%',
+            scrub: 1
+          }
+        }
+      );
+    });
+
+    gsap.utils.toArray('video.card-video, video.hero-video').forEach((video) => {
+      video.muted = true;
+      ScrollTrigger.create({
+        trigger: video,
+        start: 'top 95%',
+        end: 'bottom 5%',
+        onEnter: () => video.play().catch(() => {}),
+        onEnterBack: () => video.play().catch(() => {}),
+        onLeave: () => video.pause(),
+        onLeaveBack: () => video.pause()
       });
     });
 

@@ -751,3 +751,16 @@ img, svg, video { max-width: 100%; height: auto; display: block; }
     linear-gradient(90deg, rgba(7, 21, 30, 0.7) 0%, rgba(7, 21, 30, 0.15) 55%),
     linear-gradient(180deg, rgba(7, 21, 30, 0.45) 0%, transparent 30%, rgba(7, 21, 30, 0.6) 100%);
 }
+
+/* --- Video-backed volume cards --- */
+.volume-card .card-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  z-index: 0; pointer-events: none;
+  display: block;
+}
+.volume-card.has-video .meta { position: relative; z-index: 2; }
+.volume-card.has-video::before {
+  background: linear-gradient(180deg, transparent 25%, rgba(7,18,26,0.85) 100%);
+}
