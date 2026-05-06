@@ -16,14 +16,16 @@
       <nav class="topnav">
         <a href="index.html">Archives</a>
         <a href="marketplace.html">Curations</a>
-        <a href="librarian.html" class="active">Atelier</a>
+        <a href="marketplace.html">Catalog</a>
       </nav>
       <div class="topbar-right">
-        <input class="search" placeholder="Ask the librarian" />
-        <button class="icon-btn" aria-label="theme">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <button class="icon-btn has-dot" aria-label="notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
         </button>
-        <button class="icon-btn" aria-label="menu">
+        <button class="icon-btn" aria-label="profile">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7c1-2 2.9-3.2 5-3.2s4 1.2 5 3.2"/></svg>
+        </button>
+        <button class="icon-btn menu-toggle" aria-label="menu">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
         </button>
       </div>
@@ -31,21 +33,34 @@
 
     <aside class="sidebar">
       <div class="side-section">
-        <div class="side-title">Atelier</div>
-        <ul class="side-list">
-          <li class="side-item active"><span class="dot"></span>The Librarian's Study</li>
-          <li class="side-item"><span class="dot"></span>Reading Threads</li>
-          <li class="side-item"><span class="dot"></span>Ambient Companions</li>
-        </ul>
+        <div class="side-title">Segments</div>
+        <div class="side-profile">
+          <div class="avatar" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80')"></div>
+          <div>
+            <div class="name">The Archivist</div>
+            <div class="role">Deep Library Access</div>
+          </div>
+        </div>
       </div>
       <div class="side-section">
-        <div class="side-title">Themes</div>
-        <ul class="side-list">
-          <li class="side-item rare"><span class="dot"></span>Memory</li>
-          <li class="side-item medical"><span class="dot"></span>Reason</li>
-          <li class="side-item philosophy"><span class="dot"></span>Solitude</li>
-          <li class="side-item scifi"><span class="dot"></span>Wonder</li>
-        </ul>
+        <div class="side-list" style="display:flex; flex-direction:column; gap:6px;">
+          <a class="side-link rare active">
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span class="label">Rare Editions</span>
+          </a>
+          <a class="side-link medical">
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M12 11v6M9 14h6"/><path d="M9 6V4h6v2"/></svg>
+            <span class="label">Medical</span>
+          </a>
+          <a class="side-link philosophy">
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18M3 12h18"/></svg>
+            <span class="label">Philosophy</span>
+          </a>
+          <a class="side-link scifi">
+            <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+            <span class="label">Sci-Fi</span>
+          </a>
+        </div>
       </div>
     </aside>
 
@@ -53,86 +68,130 @@
       <header class="page-head reveal" data-reveal>
         <div>
           <h1>The Librarian's Study</h1>
-          <p>Ask about your volume, era, or a philosophical thread. The librarian draws from the depths of the Lumina archives for your query.</p>
+          <p>Ask about any volume, era, or philosophical thread. I have scoured the depths of the Lumina Archives for your query.</p>
         </div>
       </header>
 
       <section class="study">
         <div class="study-main">
-          <div class="ambient-row">
-            <div class="ambient reveal" data-reveal style="background:
-              linear-gradient(135deg, rgba(13,34,48,0.45) 0%, rgba(7,21,30,0.75) 100%),
-              url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1000&q=80') center/cover no-repeat;"></div>
-            <div class="ambient reveal" data-reveal style="background:
-              linear-gradient(135deg, rgba(13,34,48,0.45) 0%, rgba(7,21,30,0.75) 100%),
-              url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1000&q=80') center/cover no-repeat;"></div>
-          </div>
-
           <div class="chat reveal" data-reveal>
             <div class="chat-msgs" id="chat-msgs">
-              <div class="msg bot">
-                <div class="meta">Librarian</div>
-                Welcome to the study. I have indexed the latest acquisitions
-                from the 19th-century Lumina wing. Are you seeking something
-                that explores the boundaries of reality, or perhaps a more
-                structured philosophical discourse?
+              <div class="msg-row bot">
+                <div class="msg-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <div class="msg bot">
+                  Welcome to the Study. I have indexed the latest acquisitions from the
+                  <em>Mid-Century Surrealism</em> wing. Are you seeking something that explores
+                  the boundaries of reality, or perhaps a more structured philosophical discourse?
+                </div>
               </div>
-              <div class="msg user">
-                <div class="meta">You</div>
-                I'm looking for something that feels like a "private library"
-                — meditative, ornate, and intellectually dense.
+              <div class="chip-row">
+                <button class="chip">Surrealist manifestos</button>
+                <button class="chip">Epistemological studies</button>
               </div>
-              <div class="msg bot">
-                <div class="meta">Librarian</div>
-                A sublime choice. Based on that "midnight" tone, I've curated
-                three volumes that possess the weight and shadow you're seeking.
-                <div class="recs">
-                  <article class="rec">
-                    <div class="cover" style="background:
-                      linear-gradient(180deg, rgba(7,21,30,0.2) 0%, rgba(7,21,30,0.6) 100%),
-                      url('https://images.unsplash.com/photo-1495640388908-05fa85288e61?w=600&q=80') center/cover no-repeat;"></div>
-                    <h5>The Midnight Chronicles</h5>
-                    <div class="sub">Eldon Wycliffe</div>
-                  </article>
-                  <article class="rec">
-                    <div class="cover" style="background:
-                      linear-gradient(180deg, rgba(7,21,30,0.2) 0%, rgba(7,21,30,0.6) 100%),
-                      url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=600&q=80') center/cover no-repeat;"></div>
-                    <h5>Silent Echoes of Reason</h5>
-                    <div class="sub">F. Vianni Moreau</div>
-                  </article>
+              <div class="msg-row user">
+                <div class="msg-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7c1-2 2.9-3.2 5-3.2s4 1.2 5 3.2"/></svg>
+                </div>
+                <div class="msg user">
+                  I'm looking for something that feels like a "private library at midnight"
+                  — atmospheric, dense, and intellectually demanding.
+                </div>
+              </div>
+              <div class="msg-row bot">
+                <div class="msg-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <div class="msg bot">
+                  A sublime choice. Based on that "midnight" aura, I've curated three volumes
+                  that possess the weight and shadows you're seeking.
+                  <div class="recs">
+                    <article class="rec">
+                      <div class="cover" style="background:
+                        linear-gradient(180deg, rgba(7,21,30,0.2) 0%, rgba(7,21,30,0.6) 100%),
+                        url('https://images.unsplash.com/photo-1495640388908-05fa85288e61?w=600&q=80') center/cover no-repeat;"></div>
+                      <h5>The Midnight Chronicles</h5>
+                      <div class="sub">Eldon Wycliffe</div>
+                    </article>
+                    <article class="rec">
+                      <div class="cover" style="background:
+                        linear-gradient(180deg, rgba(7,21,30,0.2) 0%, rgba(7,21,30,0.6) 100%),
+                        url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=600&q=80') center/cover no-repeat;"></div>
+                      <h5>Silent Echoes of Reason</h5>
+                      <div class="sub">F. Vianni Moreau</div>
+                    </article>
+                  </div>
                 </div>
               </div>
             </div>
 
             <form class="composer" id="composer">
-              <input id="prompt" placeholder="Ask the librarian about a theme, era, or volume…" />
-              <button type="submit" class="send">Send</button>
+              <input id="prompt" placeholder="Message the Archivist..." />
+              <button type="submit" class="send" aria-label="send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              </button>
             </form>
           </div>
         </div>
 
-        <aside class="insight reveal" data-reveal>
-          <h3>Curator's Insight</h3>
-          <blockquote>
-            "The midnight reader carries the weight of every era at once — a candle held in the
-            palm of the entire library."
-          </blockquote>
-          <div class="small">Recommended Threads</div>
-          <ul>
-            <li>Solitude in 19th-century literature</li>
-            <li>Stoicism and the metaphysics of silence</li>
-            <li>The libraries of Borges & Eco</li>
-          </ul>
+        <aside>
+          <div class="aura-panel reveal" data-reveal>
+            <div class="head">
+              <span>Library Aura</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="aura-visual"></div>
+            <div class="aura-stat">
+              <div class="row"><span>Atmosphere</span><span class="val">92% Dense</span></div>
+              <div class="bar"><div class="fill" style="width: 92%;"></div></div>
+            </div>
+            <div class="aura-stat">
+              <div class="row"><span>Intellectual Rigor</span><span class="val">88% High</span></div>
+              <div class="bar"><div class="fill" style="width: 88%;"></div></div>
+            </div>
+            <div class="aura-stat">
+              <div class="row"><span>Chronology</span><span class="val">19th Century</span></div>
+              <div class="bar"><div class="fill" style="width: 72%;"></div></div>
+            </div>
+          </div>
+
+          <div class="insight reveal" data-reveal>
+            <div class="quote-glyph">"</div>
+            <h3>Curator's Insight</h3>
+            <blockquote>
+              The midnight reader doesn't seek escape, but a deeper immersion into the
+              silence that exists between the printed word. These selections require a
+              patient mind and a steady hand.
+            </blockquote>
+            <div class="signature">Archivist's Signature</div>
+          </div>
+
+          <div class="themes-block reveal" data-reveal>
+            <div class="themes-label">Associated Themes</div>
+            <div class="themes-list">
+              <span class="theme-pill">Noir Aesthetic</span>
+              <span class="theme-pill">Existentialism</span>
+              <span class="theme-pill">Tome</span>
+              <span class="theme-pill">Night Sky</span>
+            </div>
+          </div>
         </aside>
       </section>
 
       <footer class="footer">
-        <div>Lumina Literature · © 2026, all rights reserved</div>
+        <div class="brand-blk">
+          Lumina Literature
+          <div class="copyright">© 2024 Lumina Literature · The Art of Focused Reading</div>
+        </div>
         <div class="links">
-          <a href="#">The Atelier</a>
-          <a href="#">Editorial Lineage</a>
-          <a href="#">Contact</a>
+          <a href="#">The Archives</a>
+          <a href="#">Curatorial Statement</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Contact Support</a>
+        </div>
+        <div class="icons">
+          <a href="#" aria-label="web"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></a>
         </div>
       </footer>
     </main>

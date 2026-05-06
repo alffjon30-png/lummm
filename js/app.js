@@ -90,6 +90,9 @@ const composer = document.getElementById('composer');
 const promptInput = document.getElementById('prompt');
 const msgsEl = document.getElementById('chat-msgs');
 
+const BOT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>';
+const USER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7c1-2 2.9-3.2 5-3.2s4 1.2 5 3.2"/></svg>';
+
 if (composer && promptInput && msgsEl) {
   const replies = [
     'A worthy question. Let me consult the index — give me a moment.',
@@ -102,20 +105,30 @@ if (composer && promptInput && msgsEl) {
     e.preventDefault();
     const text = promptInput.value.trim();
     if (!text) return;
-    appendMessage('user', 'You', text);
+    appendMessage('user', text);
     promptInput.value = '';
     setTimeout(() => {
       const reply = replies[Math.floor(Math.random() * replies.length)];
-      appendMessage('bot', 'Librarian', reply);
+      appendMessage('bot', reply);
     }, 500);
   });
 
-  function appendMessage(kind, label, body) {
-    const node = document.createElement('div');
-    node.className = `msg ${kind}`;
-    node.innerHTML = `<div class="meta">${label}</div>${body}`;
-    msgsEl.appendChild(node);
-    gsap.from(node, { autoAlpha: 0, y: 12, duration: 0.4, ease: 'power2.out' });
-    node.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  document.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      promptInput.value = chip.textContent.trim();
+      promptInput.focus();
+    });
+  });
+
+  function appendMessage(kind, body) {
+    const row = document.createElement('div');
+    row.className = `msg-row ${kind}`;
+    row.innerHTML = `
+      <div class="msg-avatar">${kind === 'user' ? USER_ICON : BOT_ICON}</div>
+      <div class="msg ${kind}">${body}</div>
+    `;
+    msgsEl.appendChild(row);
+    gsap.from(row, { autoAlpha: 0, y: 12, duration: 0.4, ease: 'power2.out' });
+    row.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 }
