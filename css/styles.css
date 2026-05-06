@@ -734,3 +734,20 @@ img, svg, video { max-width: 100%; height: auto; display: block; }
   .topnav a.active::after { bottom: 8px; }
   .footer .links { gap: 18px; }
 }
+
+/* --- Hero background video --- */
+.hero-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  z-index: 0; pointer-events: none;
+  display: block;
+}
+.hero.has-video::before { display: none; }
+.hero.has-video .hero-canvas { display: none; }
+.hero.has-video::after {
+  background:
+    radial-gradient(70% 100% at 0% 100%, rgba(7, 21, 30, 0.85), transparent 65%),
+    linear-gradient(90deg, rgba(7, 21, 30, 0.7) 0%, rgba(7, 21, 30, 0.15) 55%),
+    linear-gradient(180deg, rgba(7, 21, 30, 0.45) 0%, transparent 30%, rgba(7, 21, 30, 0.6) 100%);
+}

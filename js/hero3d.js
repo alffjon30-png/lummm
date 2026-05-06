@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 export function initHero3D() {
   const hero = document.querySelector('.hero');
   if (!hero) return;
+  if (hero.classList.contains('has-video') || hero.querySelector('.hero-video')) return;
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
