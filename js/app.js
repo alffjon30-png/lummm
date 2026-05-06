@@ -48,6 +48,26 @@ mm.add(
   }
 );
 
+const menuBtn = document.querySelector('.icon-btn[aria-label="menu"]');
+const sidebar = document.querySelector('.sidebar');
+if (menuBtn && sidebar) {
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.body.classList.toggle('sidebar-open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!document.body.classList.contains('sidebar-open')) return;
+    if (sidebar.contains(e.target)) return;
+    document.body.classList.remove('sidebar-open');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.body.classList.remove('sidebar-open');
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 1100) document.body.classList.remove('sidebar-open');
+  });
+}
+
 const composer = document.getElementById('composer');
 const promptInput = document.getElementById('prompt');
 const msgsEl = document.getElementById('chat-msgs');
