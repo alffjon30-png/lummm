@@ -190,10 +190,43 @@ mm.add(
     });
 
     if (!reduceMotion) {
-      gsap.utils.toArray('.book, .thumb').forEach((el) => {
-        el.addEventListener('mouseenter', () => gsap.to(el, { y: -4, duration: 0.25 }));
-        el.addEventListener('mouseleave', () => gsap.to(el, { y: 0, duration: 0.25 }));
-      });
+      const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      if (canHover) {
+        const tiltSelectors = '.book, .thumb, .feature-card, .notes-card, .aura-panel, .insight, .rec';
+        gsap.utils.toArray(tiltSelectors).forEach((el) => {
+          el.style.transformStyle = 'preserve-3d';
+          el.style.willChange = 'transform';
+          let queued = false;
+          const onMove = (e) => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(() => {
+              const r = el.getBoundingClientRect();
+              const x = (e.clientX - r.left) / r.width - 0.5;
+              const y = (e.clientY - r.top) / r.height - 0.5;
+              gsap.to(el, {
+                rotateY: x * 10,
+                rotateX: -y * 8,
+                scale: 1.015,
+                transformPerspective: 1000,
+                duration: 0.5,
+                ease: 'power2.out',
+                overwrite: 'auto'
+              });
+              queued = false;
+            });
+          };
+          const onLeave = () => {
+            gsap.to(el, {
+              rotateY: 0, rotateX: 0, scale: 1,
+              duration: 0.8, ease: 'elastic.out(1, 0.5)',
+              overwrite: 'auto'
+            });
+          };
+          el.addEventListener('mousemove', onMove, { passive: true });
+          el.addEventListener('mouseleave', onLeave);
+        });
+      }
 
       gsap.utils.toArray('.btn-light, .btn-ghost, .ask-librarian, .review-btn, .composer .send').forEach((btn) => {
         const strength = btn.classList.contains('ask-librarian') || btn.classList.contains('send') ? 0.45 : 0.28;
@@ -223,6 +256,42 @@ mm.add(
     };
   }
 );
+
+if (!reduceMotionGlobal) {
+  const main = document.querySelector('main');
+  if (main) {
+    gsap.fromTo(main,
+      { autoAlpha: 0, y: 18 },
+      { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 0.05 }
+    );
+  }
+
+  const here = window.location.pathname.replace(/\/$/, '') || '/index.html';
+  document.querySelectorAll('a[href$=".html"]').forEach((link) => {
+    let url;
+    try { url = new URL(link.href, window.location.href); } catch { return; }
+    if (url.origin !== window.location.origin) return;
+    const target = url.pathname.replace(/\/$/, '') || '/index.html';
+    if (target === here) return;
+
+    link.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      const m = document.querySelector('main');
+      gsap.to(m, {
+        autoAlpha: 0, y: -18, duration: 0.32, ease: 'power2.in',
+        onComplete: () => { window.location.href = link.href; }
+      });
+    });
+  });
+
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      const m = document.querySelector('main');
+      if (m) gsap.set(m, { autoAlpha: 1, y: 0 });
+    }
+  });
+}
 
 const menuBtn = document.querySelector('.icon-btn[aria-label="menu"]');
 const sidebar = document.querySelector('.sidebar');

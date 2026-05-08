@@ -861,3 +861,19 @@ body.wing-scifi .book .pill:not(.rare):not(.bestseller) {
 body.wing-rare .book.has-spark .spark,
 body.wing-philosophy .book.has-spark .spark,
 body.wing-scifi .book.has-spark .spark { color: var(--wing); }
+
+/* --- Magnetic tilt support: keep child rendering crisp while parent rotates --- */
+.book, .thumb, .feature-card, .notes-card, .aura-panel, .insight, .rec {
+  transform-style: preserve-3d;
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+.book > *, .feature-card > *, .notes-card > *, .aura-panel > *, .insight > *, .rec > * {
+  transform: translateZ(0); /* lift onto own GPU layer to avoid sub-pixel jitter */
+}
+/* Override the existing .book:hover translateY so it doesn't fight tilt scale */
+@media (hover: hover) and (pointer: fine) {
+  .book:hover, .thumb:hover { transform: none; }
+}
+
+/* Page transition: prevent FOUC flash before main fades in */
+main { will-change: opacity, transform; }
