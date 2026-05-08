@@ -101,6 +101,10 @@ Single stylesheet that grew in append-only layers. Order is significant — late
 - Firebase Auth (decision pending — Supabase Auth would be simpler if no Firebase-specific features are needed)
 - Two pending Meta AI videos (links the user has are `meta.ai/create/...` session URLs, not direct mp4s) — destination unclear, likely a third video showcase or to replace the right Trending card
 
+## Skills
+
+A custom skill lives at `.claude/skills/3d-motion/SKILL.md` covering magnetic tilt, scroll-driven 3D, `[data-reveal]` entries, 3D card fans, drag-to-rotate, idle float, scroll-snap depth sections, GSAP ScrollTrigger, and the GPU-composited performance rules. Reach for it when the user asks for any motion/animation work.
+
 ## Branch
 
 Active development branch: `claude/setup-lumina-literature-3Czkf`. The `main` branch is empty/stale — do not push there without confirming with the user first.

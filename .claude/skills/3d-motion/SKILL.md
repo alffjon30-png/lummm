@@ -1,6 +1,10 @@
-# 3D Motion & Animation Skill
+---
+name: 3d-motion
+description: Apply when adding, refining, or designing motion/animation on the web — magnetic mouse/touch tilt, scroll-driven 3D parallax, [data-reveal] entry animations, 3D card fans, drag-to-rotate, idle floating, scroll-snap depth sections, or GSAP ScrollTrigger timelines. Enforces the rule that only `transform` and `opacity` animate, prefers `IntersectionObserver` over scroll-position reads, and keeps everything GPU-composited. Triggers: "3d", "tilt", "parallax", "scroll animation", "magnetic", "reveal", "carousel", "drag rotate", "scrollytelling", "gsap", "scrolltrigger", "motion design".
+---
 
-> Drop this file into your project root. Claude Code reads it automatically every session.
+
+# 3D Motion & Animation
 
 ## Mission
 
