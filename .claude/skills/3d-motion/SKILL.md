@@ -588,3 +588,196 @@ Idle floating        → .float-element class (CSS only)
 Scroll-snap sections → .snap-container > .snap-section + observer JS
 GSAP scroll timeline → ScrollTrigger with scrub + pin
 ```
+
+---
+
+## 8. Three.js Premium Hero Scene (the "$10k agency look")
+
+**Rule:** When a section needs a *bespoke 3D object* as the hero — like the Lagunitas IPA, CrazyCap, Cadence, or Keychrone reference sites — the recipe is **PBR materials + environment map + studio lighting + scroll-tied motion**, not floating colored cubes.
+
+### 8a. Tone-mapped renderer + room environment for instant reflections
+
+```js
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;   // filmic, not flat
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+// Generate an indoor environment map — gives metals real reflections for free
+const pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+```
+
+### 8b. Three-point lighting (key + fill + rim)
+
+```js
+scene.add(new THREE.AmbientLight(0x1a2a36, 0.55));
+
+const key = new THREE.DirectionalLight(0xfff1d6, 1.4); // warm key
+key.position.set(5, 7, 6);
+key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024);
+key.shadow.bias = -0.0005;
+key.shadow.radius = 4;
+scene.add(key);
+
+scene.add(Object.assign(new THREE.DirectionalLight(0x4ea3a0, 0.55), { // cool fill
+  position: new THREE.Vector3(-6, 2, 4)
+}));
+
+const rim = new THREE.SpotLight(0xd6b27a, 1.6, 24, Math.PI / 5, 0.6, 1); // gold rim
+rim.position.set(-3, 4, -5);
+scene.add(rim);
+```
+
+### 8c. PBR materials that read as real
+
+Use `MeshPhysicalMaterial` (extends Standard with clearcoat + sheen). Pair `metalness` near 1.0 with low `roughness` for gold/brass; keep leather at `metalness: 0.08, roughness: 0.62` plus a subtle clearcoat:
+
+```js
+// Gold gilt
+new THREE.MeshPhysicalMaterial({
+  color: 0xd4a04c,
+  metalness: 1.0,
+  roughness: 0.18,
+  clearcoat: 0.6,
+  clearcoatRoughness: 0.2,
+  emissive: 0xd4a04c,
+  emissiveIntensity: 0.045
+});
+
+// Leather cover
+new THREE.MeshPhysicalMaterial({
+  color: 0x2a1410,
+  roughness: 0.62,
+  metalness: 0.08,
+  clearcoat: 0.35,
+  clearcoatRoughness: 0.55,
+  sheen: 0.4,
+  sheenColor: new THREE.Color(0x6b3a25)
+});
+
+// Paper / pages
+new THREE.MeshPhysicalMaterial({
+  color: 0xece3cf,
+  roughness: 0.92,
+  metalness: 0,
+  sheen: 0.1
+});
+```
+
+### 8d. Soft-edge geometry — never use sharp `BoxGeometry` for hero objects
+
+```js
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+// 5 segments, 0.06 radius — light catches the corners
+const cover = new RoundedBoxGeometry(width, height, depth, 5, 0.06);
+```
+
+Build composite objects (a book = cover + pages + spine + gilt frame + title plate + ribbon) by grouping multiple meshes into a `THREE.Group`. Each piece gets its own material so reflections behave correctly.
+
+### 8e. Shadow-catching floor
+
+A horizontal plane below the object catches the directional shadow and grounds it in space — the difference between "floating in void" and "sitting on a surface".
+
+```js
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.MeshPhysicalMaterial({ color: 0x07151e, roughness: 0.4, metalness: 0.05 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -3.2;
+floor.receiveShadow = true;
+scene.add(floor);
+```
+
+### 8f. Scroll-tied camera dolly + idle drift (the motion recipe)
+
+The reference sites all share this motion fingerprint: **slow idle rotation always**, **scroll dollies the camera back and rotates the stage**, **mouse parallax glides the camera horizontally**.
+
+```js
+const scroll = { progress: 0 };
+ScrollTrigger.create({
+  trigger: hero,
+  start: 'top top',
+  end:   '+=120%',
+  scrub: 1.2,
+  onUpdate: (self) => { scroll.progress = self.progress; }
+});
+
+const target = { x: 0, y: 0 };
+hero.addEventListener('mousemove', (e) => {
+  const r = hero.getBoundingClientRect();
+  target.x = ((e.clientX - r.left) / r.width  - 0.5) * 1.4;
+  target.y = ((e.clientY - r.top)  / r.height - 0.5) * 0.8;
+});
+
+function tick() {
+  requestAnimationFrame(tick);
+  const t = clock.getElapsedTime();
+
+  // Idle: every object always breathes
+  mainBook.rotation.y = baseRot + Math.sin(t * 0.25) * 0.12;
+  mainBook.position.y = base + Math.sin(t * 0.5) * 0.08;
+
+  // Scroll: rotate the whole stage, dolly camera back
+  stage.rotation.y = scroll.progress * Math.PI * 0.35;
+  stage.position.z = scroll.progress * -2.5;
+
+  // Mouse: smoothed lerp, never instant
+  camera.position.x += (target.x * 1.1 - camera.position.x) * 0.05;
+  camera.position.y += (-target.y * 0.6 + 0.6 - scroll.progress * 0.8 - camera.position.y) * 0.05;
+  camera.position.z += (11 + scroll.progress * 4 - camera.position.z) * 0.05;
+  camera.lookAt(0.4, 0, 0);
+
+  renderer.render(scene, camera);
+}
+```
+
+### 8g. Entrance: fly each piece in from depth
+
+```js
+[mainBook, sideBookA, sideBookB].forEach((b, i) => {
+  const fromZ = b.position.z - 8 - i * 2;
+  gsap.from(b.position, { z: fromZ, duration: 1.6, delay: 0.15 + i * 0.1, ease: 'expo.out' });
+  gsap.from(b.rotation, {
+    x: '+=' + Math.PI * 0.4, y: '+=' + Math.PI * 0.7,
+    duration: 1.6, delay: 0.15 + i * 0.1, ease: 'expo.out'
+  });
+});
+```
+
+### 8h. Performance & lifecycle
+
+- `IntersectionObserver` on the hero so `tick()` short-circuits when offscreen — never render a hidden canvas
+- `ResizeObserver` to keep the canvas/camera in sync (don't listen to `window.resize`, the hero can resize without window resizing — sidebar collapse, layout shift, etc.)
+- `setPixelRatio(Math.min(devicePixelRatio, 2))` — past 2× DPR you're paying GPU cost no one can see
+
+### 8i. When you need a real model (GLTF)
+
+The procedural approach above maxes out at "premium-feeling primitives". For *photorealistic* products (cameras, headphones, watches), load a `.glb`:
+
+```js
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+new GLTFLoader().load('/models/book.glb', (gltf) => {
+  const model = gltf.scene;
+  model.traverse((c) => {
+    if (c.isMesh) {
+      c.castShadow = c.receiveShadow = true;
+      c.material.envMapIntensity = 0.9;
+    }
+  });
+  scene.add(model);
+});
+```
+
+Source `.glb` files from Sketchfab (CC0 / CC-BY), Poly Haven, or commission on Fiverr. Keep them under 5 MB; compress with `gltf-transform optimize` if larger. Drop into `public/models/` (Vite serves it at `/models/...`).

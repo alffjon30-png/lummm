@@ -877,3 +877,13 @@ body.wing-scifi .book.has-spark .spark { color: var(--wing); }
 
 /* Page transition: prevent FOUC flash before main fades in */
 main { will-change: opacity, transform; }
+
+/* --- Premium hero scene: give the 3D books more vertical room --- */
+@media (min-width: 900px) {
+  .hero { min-height: 640px; padding-top: 72px; padding-bottom: 96px; }
+  .hero h1 { max-width: 14ch; }
+  .hero p.lede { max-width: 42ch; }
+}
+@media (min-width: 1280px) {
+  .hero { min-height: 700px; }
+}
