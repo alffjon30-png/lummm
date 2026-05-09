@@ -105,14 +105,9 @@ mm.add(
       }
     }
 
-    const trending = document.querySelector('.trending');
-    const trendingCards = trending ? gsap.utils.toArray('.volume-card', trending) : [];
-    const use3DStack = isDesktop && !reduceMotion && trendingCards.length >= 2;
-
     const others = gsap.utils
       .toArray('[data-reveal]')
-      .filter((el) => !hero || !hero.contains(el))
-      .filter((el) => !(use3DStack && trending && trending.contains(el) && el.classList.contains('volume-card')));
+      .filter((el) => !hero || !hero.contains(el));
 
     others.forEach((el) => {
       gsap.fromTo(
@@ -125,56 +120,24 @@ mm.add(
       );
     });
 
-    gsap.utils.toArray('.volume-card').forEach((card) => {
+    gsap.utils.toArray('.volume-card').forEach((card, i) => {
       const layer = card.querySelector('.bg, video.card-video');
-      if (!layer) return;
-      gsap.to(layer, {
-        yPercent: -10, scale: 1.08, ease: 'none',
-        scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true }
-      });
-    });
-
-    if (use3DStack) {
-      trending.classList.add('stack-3d');
-      const stackHeight = Math.max(...trendingCards.map((c) => c.offsetHeight), 380);
-      trending.style.height = stackHeight + 'px';
-
-      gsap.set(trendingCards[0], {
-        z: 0, rotationY: 0, rotationX: 0, scale: 1, autoAlpha: 1,
-        transformPerspective: 1500, transformOrigin: '50% 50%'
-      });
-      gsap.set(trendingCards[1], {
-        z: -520, rotationY: 32, rotationX: -3, scale: 0.86, autoAlpha: 0,
-        transformPerspective: 1500, transformOrigin: '50% 50%'
-      });
-
-      const tl = gsap.timeline({
-        defaults: { ease: 'power2.inOut' },
-        scrollTrigger: {
-          trigger: trending,
-          start: 'top 18%',
-          end: '+=140%',
-          scrub: 1.2,
-          pin: true,
-          pinSpacing: true,
-          anticipatePin: 1,
-          invalidateOnRefresh: true
+      if (layer) {
+        gsap.to(layer, {
+          yPercent: -10, scale: 1.08, ease: 'none',
+          scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true }
+        });
+      }
+      gsap.fromTo(
+        card,
+        { autoAlpha: 0, y: 50, scale: 0.97 },
+        {
+          autoAlpha: 1, y: 0, scale: 1, duration: 0.9, ease: 'power3.out',
+          delay: i * 0.08,
+          scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' }
         }
-      });
-      tl.to(trendingCards[0], { z: -480, rotationY: -28, rotationX: 4, scale: 0.86, autoAlpha: 0 }, 0)
-        .to(trendingCards[1], { z: 0, rotationY: 0, rotationX: 0, scale: 1, autoAlpha: 1 }, 0);
-    } else if (trendingCards.length) {
-      trendingCards.forEach((card) => {
-        gsap.fromTo(
-          card,
-          { autoAlpha: 0.4, y: 40, scale: 0.96 },
-          {
-            autoAlpha: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out',
-            scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' }
-          }
-        );
-      });
-    }
+      );
+    });
 
     gsap.utils.toArray('video.card-video, video.hero-video').forEach((video) => {
       video.muted = true;
@@ -248,12 +211,6 @@ mm.add(
       });
     }
 
-    return () => {
-      if (trending) {
-        trending.classList.remove('stack-3d');
-        trending.style.height = '';
-      }
-    };
   }
 );
 
