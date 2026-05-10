@@ -105,9 +105,12 @@ mm.add(
       }
     }
 
+    const cardSelectors = '.volume-card, .thumb, .book, .feature-card, .notes-card, .aura-panel, .insight, .rec, .themes-block, .ambient';
+
     const others = gsap.utils
       .toArray('[data-reveal]')
-      .filter((el) => !hero || !hero.contains(el));
+      .filter((el) => !hero || !hero.contains(el))
+      .filter((el) => !el.matches(cardSelectors));
 
     others.forEach((el) => {
       gsap.fromTo(
@@ -119,6 +122,41 @@ mm.add(
         }
       );
     });
+
+    const D3 = isDesktop && !reduceMotion;
+    function entrance3D(els, opts) {
+      const o = Object.assign(
+        { rotY: 12, rotX: 5, z: -100, y: 50, stagger: 0.08, dur: 1.1, perspective: 1400, start: 'top 85%' },
+        opts || {}
+      );
+      els.forEach((el, i) => {
+        const initRotY = typeof o.rotY === 'function' ? o.rotY(i) : o.rotY;
+        if (D3) {
+          gsap.set(el, {
+            transformPerspective: o.perspective,
+            transformOrigin: '50% 50%',
+            rotationY: initRotY,
+            rotationX: o.rotX,
+            z: o.z,
+            autoAlpha: 0,
+            y: o.y
+          });
+          gsap.to(el, {
+            rotationY: 0, rotationX: 0, z: 0, autoAlpha: 1, y: 0,
+            duration: o.dur, ease: 'power3.out', delay: i * o.stagger,
+            scrollTrigger: { trigger: o.trigger || el, start: o.start, toggleActions: 'play none none none' }
+          });
+        } else {
+          gsap.fromTo(el,
+            { autoAlpha: 0, y: 40 },
+            {
+              autoAlpha: 1, y: 0, duration: 0.8, ease: 'power3.out', delay: i * 0.06,
+              scrollTrigger: { trigger: o.trigger || el, start: o.start, toggleActions: 'play none none none' }
+            }
+          );
+        }
+      });
+    }
 
     gsap.utils.toArray('.volume-card').forEach((card, i) => {
       const layer = card.querySelector('.bg, video.card-video');
@@ -170,6 +208,52 @@ mm.add(
         }
       });
     });
+
+    const thumbs = gsap.utils.toArray('.thumb');
+    if (thumbs.length) {
+      entrance3D(thumbs, {
+        trigger: document.querySelector('.curated-grid') || thumbs[0],
+        rotY: (i) => (i % 2 === 0 ? -14 : 14),
+        rotX: 6, z: -130, y: 60, stagger: 0.1, perspective: 1400
+      });
+    }
+
+    const catalogBooks = gsap.utils.toArray('.catalog .book');
+    if (catalogBooks.length) {
+      entrance3D(catalogBooks, {
+        trigger: document.querySelector('.catalog'),
+        rotY: 18, rotX: 6, z: -150, y: 70, stagger: 0.1, perspective: 1500, start: 'top 82%'
+      });
+    }
+
+    const featureCards = gsap.utils.toArray('.feature-card');
+    if (featureCards.length) {
+      entrance3D(featureCards, {
+        rotY: -12, rotX: 5, z: -110, y: 60, stagger: 0, perspective: 1500, dur: 1.2
+      });
+    }
+
+    const notesCards = gsap.utils.toArray('.notes-card');
+    if (notesCards.length) {
+      entrance3D(notesCards, {
+        rotY: 12, rotX: 4, z: -90, y: 50, stagger: 0, perspective: 1400, dur: 1.1, start: 'top 86%'
+      });
+    }
+
+    const sideRail = gsap.utils.toArray('.aura-panel, .insight, .themes-block');
+    if (sideRail.length) {
+      entrance3D(sideRail, {
+        rotY: 14, rotX: 4, z: -90, y: 50, stagger: 0.12, perspective: 1400, start: 'top 88%'
+      });
+    }
+
+    const recs = gsap.utils.toArray('.rec');
+    if (recs.length) {
+      entrance3D(recs, {
+        rotY: (i) => (i % 2 === 0 ? -10 : 10),
+        rotX: 4, z: -70, y: 30, stagger: 0.1, perspective: 1300, dur: 0.9, start: 'top 92%'
+      });
+    }
 
     gsap.utils.toArray('video.card-video, video.hero-video').forEach((video) => {
       video.muted = true;
