@@ -124,19 +124,51 @@ mm.add(
       const layer = card.querySelector('.bg, video.card-video');
       if (layer) {
         gsap.to(layer, {
-          yPercent: -10, scale: 1.08, ease: 'none',
+          yPercent: -12, scale: 1.1, ease: 'none',
           scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true }
         });
       }
-      gsap.fromTo(
-        card,
-        { autoAlpha: 0, y: 50, scale: 0.97 },
-        {
-          autoAlpha: 1, y: 0, scale: 1, duration: 0.9, ease: 'power3.out',
-          delay: i * 0.08,
-          scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' }
+
+      const startRot = i === 0 ? 14 : -14;
+
+      gsap.set(card, {
+        transformPerspective: 1400,
+        transformOrigin: '50% 50%',
+        rotationY: startRot,
+        rotationX: 8,
+        z: -120,
+        autoAlpha: 0,
+        y: 80
+      });
+
+      gsap.to(card, {
+        rotationY: i === 0 ? 6 : -6,
+        rotationX: 3,
+        z: 0,
+        autoAlpha: 1,
+        y: 0,
+        duration: 1.3,
+        ease: 'power3.out',
+        delay: i * 0.14,
+        scrollTrigger: {
+          trigger: '.trending',
+          start: 'top 82%',
+          toggleActions: 'play none none none'
         }
-      );
+      });
+
+      gsap.to(card, {
+        rotationY: 0,
+        rotationX: 0,
+        scale: 1.015,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.trending',
+          start: 'top 60%',
+          end: 'bottom 40%',
+          scrub: 1.1
+        }
+      });
     });
 
     gsap.utils.toArray('video.card-video, video.hero-video').forEach((video) => {
