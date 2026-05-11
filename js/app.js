@@ -123,7 +123,7 @@ mm.add(
       );
     });
 
-    const D3 = isDesktop && !reduceMotion;
+    const D3 = !reduceMotion;
     function entrance3D(els, opts) {
       const o = Object.assign(
         { rotY: 12, rotX: 5, z: -100, y: 50, stagger: 0.08, dur: 1.1, perspective: 1400, start: 'top 85%' },
@@ -365,6 +365,17 @@ if (!reduceMotionGlobal) {
     }
   });
 }
+
+const kickVideos = () => {
+  document.querySelectorAll('video[autoplay]').forEach((v) => {
+    v.muted = true;
+    v.play().catch(() => {});
+  });
+};
+['touchstart', 'click', 'pointerdown'].forEach((evt) => {
+  document.addEventListener(evt, kickVideos, { once: true, passive: true });
+});
+window.addEventListener('load', kickVideos, { once: true });
 
 const menuBtn = document.querySelector('.icon-btn[aria-label="menu"]');
 const sidebar = document.querySelector('.sidebar');
