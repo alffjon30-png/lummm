@@ -21,7 +21,7 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 | `scifi.html` | `/scifi.html` | The Speculative Wing | Dr. Kai Voronin · Speculative Curator | `--scifi` ember |
 | `librarian.html` | `/librarian.html` | The Librarian's Study (AI chat) | The Archivist · Deep Library Access | gold |
 
-**Index** has no sidebar. Hero plays `/videos/cathedral-hero.mp4` autoplay-muted-loop with a darkened scrim (a slow camera flythrough of an endless cathedral). The Three.js procedural-book scene (`js/hero3d.js`) is **dormant whenever the hero has `.has-video` or a `.hero-video` element** — it stays in the codebase and is fully functional, but the video takes the slot. To switch back to the procedural scene, remove the `<video>` element + `has-video` class from `index.html`. Trending Volumes uses pinned 3D scroll-stack on desktop, both cards play video. Curated Segments uses arrow-row layout linking to each wing.
+**Index** has no sidebar. Hero plays `/videos/hero-0511.mp4` autoplay-muted-loop with a darkened scrim. The Three.js procedural-book scene (`js/hero3d.js`) is **dormant whenever the hero has `.has-video` or a `.hero-video` element** — it stays in the codebase and is fully functional, but the video takes the slot. To switch back to the procedural scene, remove the `<video>` element + `has-video` class from `index.html`. Trending Volumes uses pinned 3D scroll-stack on desktop, both cards play video. Curated Segments uses arrow-row layout linking to each wing.
 
 **Wing pages** (marketplace / rare / philosophy / scifi) share a template: sidebar with `Segments` label + 4 cross-wing nav links + curator profile pinned at bottom; page head with accent pill ("Medical Accent: Cyan", "Philosophy · Amethyst" etc.) + accent bar; Collector's Highlight card with bespoke title/price/CTA; Curator's Notes card with stat row; 4-card catalog with type pills; "Transitioning to" divider linking the wings in a cycle (Medical → Philosophy & Ethics, Rare → Medical, Philosophy → Sci-Fi, Sci-Fi → Rare). The wing's accent color comes from `body.wing-{name}` setting `--wing`, `--wing-bg`, `--wing-border` CSS variables that everything wing-specific reads.
 
@@ -45,7 +45,8 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 │   └── hero3d.js           # Three.js scene; bails if hero has .has-video
 └── public/
     └── videos/             # Local mp4 assets, served at /videos/*
-        ├── cathedral-hero.mp4                                     # current hero
+        ├── hero-0511.mp4                                          # current hero
+        ├── cathedral-hero.mp4                                     # retired hero option
         ├── 3d-animation-of-the-library-scene-with-books-flyin.mp4 # retired hero option
         └── video-1070044246195105.mp4                             # left Trending card
 ```
