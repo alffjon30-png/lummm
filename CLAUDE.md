@@ -108,6 +108,31 @@ Deployed on Vercel at `https://lummm-five.vercel.app/`. Vercel's production-bran
 - **GPU compositing rule** (also in the 3d-motion skill): only animate `transform` and `opacity`. Never `top`/`left`/`width`/`height`/`margin`.
 - **Long-lived video decodes**: any background-style video must be paused when offscreen via IntersectionObserver. ScrollTrigger's `onEnter` does not fire when the element starts already inside the active range, so don't rely on it for the initial play state.
 
+## Security posture (pre-backend)
+
+The site is static — no auth, no user data, no API calls — but the security headers are already in place so when Supabase / Firebase Auth lands, nothing has to be unlocked retroactively.
+
+- **Security headers** live in `vercel.json` and apply to every route:
+  - **CSP**: `default-src 'self'`; only `fonts.googleapis.com` (CSS), `fonts.gstatic.com` (fonts), `images.unsplash.com` (images), and `d8j0ntlcm91z4.cloudfront.net` (the right Trending mp4) are allowlisted. `script-src 'self'` with no `'unsafe-inline'` or `'unsafe-eval'`. `frame-ancestors 'none'` kills clickjacking. `connect-src 'self'` means **any future Supabase or external API URL must be added here** or fetch will be blocked.
+  - **HSTS** with 2-year `max-age`, `includeSubDomains`, `preload`
+  - **X-Frame-Options: DENY**, **X-Content-Type-Options: nosniff**
+  - **Referrer-Policy: strict-origin-when-cross-origin**
+  - **Permissions-Policy** denies camera, mic, geolocation, payment, USB, motion sensors, MIDI, FLoC/Topics
+  - **X-XSS-Protection: 0** (modern recommendation — CSP supersedes the legacy filter)
+  - **Cross-Origin-Opener-Policy: same-origin**
+- **Chat XSS fixed** — `appendMessage` in `js/app.js` uses `textContent` for the body and a `<template>` parse for the trusted avatar SVG. User input is never passed through `innerHTML`.
+- **Input hardening** — search inputs `maxlength="120" autocomplete="off" spellcheck="false"`; the librarian chat prompt `maxlength="500" autocomplete="off"`. Caps the damage from paste-bombs.
+- **No client-side persistence** — no `localStorage`, no `sessionStorage`, no cookies set by the frontend. There is nothing to leak.
+- **No secrets in the frontend** — no API keys, no service URLs (yet). When Supabase lands, only the anon/public key goes in the frontend (never the service-role key).
+
+### When backend is added
+
+1. Add the Supabase project URL to CSP `connect-src`.
+2. Set up Row Level Security on every Supabase table before any client-side query — RLS is the security model, the anon key alone is not a secret.
+3. If Firebase Auth is wired, allowlist `*.firebaseapp.com` + `*.googleapis.com` in `connect-src`, and `accounts.google.com` in `frame-src` if using popup OAuth.
+4. Auth tokens go in `httpOnly` cookies (preferred) or `sessionStorage` (acceptable for SPAs that handle revocation); never `localStorage`.
+5. Any user-generated content rendered later (reviews, comments) must go through `textContent`, never `innerHTML`, or through a sanitizer like DOMPurify with a strict allowlist.
+
 ## Planned (not yet wired)
 
 - Supabase for backend / data (not Supabase Auth)

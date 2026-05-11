@@ -482,10 +482,19 @@ if (composer && promptInput && msgsEl) {
   function appendMessage(kind, body) {
     const row = document.createElement('div');
     row.className = `msg-row ${kind}`;
-    row.innerHTML = `
-      <div class="msg-avatar">${kind === 'user' ? USER_ICON : BOT_ICON}</div>
-      <div class="msg ${kind}">${body}</div>
-    `;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    const tmpl = document.createElement('template');
+    tmpl.innerHTML = kind === 'user' ? USER_ICON : BOT_ICON;
+    avatar.appendChild(tmpl.content);
+
+    const msg = document.createElement('div');
+    msg.className = `msg ${kind}`;
+    msg.textContent = body;
+
+    row.appendChild(avatar);
+    row.appendChild(msg);
     msgsEl.appendChild(row);
     gsap.from(row, { autoAlpha: 0, y: 12, duration: 0.4, ease: 'power2.out' });
     row.scrollIntoView({ behavior: 'smooth', block: 'end' });
