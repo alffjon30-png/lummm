@@ -21,7 +21,7 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 | `scifi.html` | `/scifi.html` | The Speculative Wing | Dr. Kai Voronin · Speculative Curator | `--scifi` ember |
 | `librarian.html` | `/librarian.html` | The Librarian's Study (AI chat) | The Archivist · Deep Library Access | gold |
 
-**Index** has no sidebar. Hero plays `/videos/hero-0511.mp4` autoplay-muted-loop with a darkened scrim. The Three.js procedural-book scene (`js/hero3d.js`) is **dormant whenever the hero has `.has-video` or a `.hero-video` element** — it stays in the codebase and is fully functional, but the video takes the slot. To switch back to the procedural scene, remove the `<video>` element + `has-video` class from `index.html`. Trending Volumes uses pinned 3D scroll-stack on desktop, both cards play video. Curated Segments uses arrow-row layout linking to each wing.
+**Index** has no sidebar. Hero plays `/videos/hero-0511.mp4` (720p / 24fps / CRF 26 / 1.6 MB, re-encoded from a 12 MB source) autoplay-muted-loop with a darkened scrim. Only CTA in the hero is **Enter the archive**; the old **Watch intro** ghost button was removed because it pointed at a `#trending` anchor rather than real video. The wordmark `Lumina Literature` is an `<a class="brand" href="index.html">` on every page (gold hover, no underline) — clicking it returns to the landing. The Three.js procedural-book scene (`js/hero3d.js`) is **dormant whenever the hero has `.has-video` or a `.hero-video` element** — it stays in the codebase and is fully functional, but the video takes the slot. To switch back to the procedural scene, remove the `<video>` element + `has-video` class from `index.html`. Trending Volumes uses pinned 3D scroll-stack on desktop, both cards play video. Curated Segments uses arrow-row layout linking to each wing.
 
 **Wing pages** (marketplace / rare / philosophy / scifi) share a template: sidebar with `Segments` label + 4 cross-wing nav links + curator profile pinned at bottom; page head with accent pill ("Medical Accent: Cyan", "Philosophy · Amethyst" etc.) + accent bar; Collector's Highlight card with bespoke title/price/CTA; Curator's Notes card with stat row; 4-card catalog with type pills; "Transitioning to" divider linking the wings in a cycle (Medical → Philosophy & Ethics, Rare → Medical, Philosophy → Sci-Fi, Sci-Fi → Rare). The wing's accent color comes from `body.wing-{name}` setting `--wing`, `--wing-bg`, `--wing-border` CSS variables that everything wing-specific reads.
 
@@ -70,7 +70,8 @@ Key effects:
 - **Hero h1 char reveal** — `splitChars()` walks text nodes, wraps each character in `<span class="char">`, preserves `<br>`/`<em>` structure. Animates rotateX -85 → 0, y 56 → 0, autoAlpha 0 → 1 with 22ms stagger.
 - **Trending 3D pin** (desktop only) — `.trending` gets `.stack-3d` class, cards become absolutely positioned, scrubbed timeline rotates card 0 back into depth (`z -480, rotateY -28`) while card 1 rotates forward from behind (`z -520 → 0, rotateY 32 → 0`). Pins for 140% viewport, scrub 1.2.
 - **Volume card inner parallax** — the `.bg` or `video.card-video` inside each card translates `yPercent: -10` with `scale 1.08`, scrubbed.
-- **Video viewport play/pause** — every `video.card-video, video.hero-video` plays only when its ScrollTrigger reports it intersecting; pauses otherwise.
+- **Card video viewport play/pause** — every `video.card-video` plays only when its ScrollTrigger reports it intersecting; pauses otherwise. **Hero video is excluded** from this loop on purpose.
+- **Hero video autoplay (mobile-safe)** — a dedicated bootstrap above the matchMedia block (`js/app.js:64`) forces `muted=true`/`playsInline=true` programmatically, fires `play()` on script load + every readiness event (`loadedmetadata`/`loadeddata`/`canplay`/`canplaythrough`) + `DOMContentLoaded` + first touch/click/pointer/scroll + tab focus regain. ScrollTrigger's `onEnter` was unreliable here because the hero starts already inside its active range; an `IntersectionObserver(threshold: 0.05)` handles the pause-when-offscreen so the laptop GPU isn't decoding the loop forever after the user scrolls past.
 - **Magnetic CTAs** — `.btn-light, .btn-ghost, .ask-librarian, .review-btn, .composer .send` pull toward cursor on `mousemove` (rAF-throttled), snap back with `elastic.out` on `mouseleave`.
 - **Scroll progress bar** — fixed top, scaleX driven by `ScrollTrigger.create({ start: 0, end: 'max' })`.
 - **Generic `[data-reveal]`** — fade-in scrubbed by `ScrollTrigger`. Trending cards are excluded when 3D stack is active.
@@ -96,6 +97,16 @@ Single stylesheet that grew in append-only layers. Order is significant — late
 - **Reveal entries**: add `data-reveal` to any element you want fading in on scroll. Hero items + section heads + cards already have it.
 - **Z-index stacking inside hero**: photo backdrop `0`, video/canvas `1`, scrim `::after` `2`, text content `3`.
 - **Mobile drawer toggle**: `.icon-btn[aria-label="menu"]` toggles `body.sidebar-open`. The hamburger only displays below 1100px.
+
+## Hosting
+
+Deployed on Vercel at `https://lummm-five.vercel.app/`. Vercel's production-branch setting needs to point at `claude/setup-lumina-literature-3Czkf` (Settings → Git → Production Branch) so every push auto-deploys to prod. If left on `main`, prod will serve stale builds and you have to manually **Promote to Production** from the Deployments tab after each push. The Vercel Toolbar appears only to logged-in team members; disable in Settings → Advanced if it bothers you.
+
+## Performance budget
+
+- **Hero video**: keep under 2 MB. Re-encode any future hero with `ffmpeg -c:v libx264 -preset slower -crf 26 -vf "scale=1280:720:flags=lanczos,fps=24" -an -movflags +faststart -pix_fmt yuv420p`. The `+faststart` flag moves the moov atom to the head so streaming can begin before download finishes.
+- **GPU compositing rule** (also in the 3d-motion skill): only animate `transform` and `opacity`. Never `top`/`left`/`width`/`height`/`margin`.
+- **Long-lived video decodes**: any background-style video must be paused when offscreen via IntersectionObserver. ScrollTrigger's `onEnter` does not fire when the element starts already inside the active range, so don't rely on it for the initial play state.
 
 ## Planned (not yet wired)
 
