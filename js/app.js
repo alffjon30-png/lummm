@@ -63,6 +63,39 @@ if (heroH1 && !reduceMotionGlobal) {
 
 initHero3D();
 
+const heroVideo = document.querySelector('.hero-video');
+if (heroVideo) {
+  heroVideo.muted = true;
+  heroVideo.setAttribute('muted', '');
+  heroVideo.setAttribute('playsinline', '');
+  heroVideo.playsInline = true;
+  heroVideo.defaultMuted = true;
+  let heroPlayed = false;
+  const tryPlayHero = () => {
+    if (heroPlayed) return;
+    const p = heroVideo.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => { heroPlayed = true; }).catch(() => {});
+    }
+  };
+  ['loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough'].forEach((evt) => {
+    heroVideo.addEventListener(evt, tryPlayHero, { passive: true });
+  });
+  if (heroVideo.readyState >= 2) tryPlayHero();
+  tryPlayHero();
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    tryPlayHero();
+  } else {
+    document.addEventListener('DOMContentLoaded', tryPlayHero, { once: true });
+  }
+  ['touchstart', 'click', 'pointerdown', 'scroll'].forEach((evt) => {
+    document.addEventListener(evt, tryPlayHero, { once: true, passive: true });
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) tryPlayHero();
+  });
+}
+
 const mm = gsap.matchMedia();
 
 mm.add(
@@ -255,7 +288,7 @@ mm.add(
       });
     }
 
-    gsap.utils.toArray('video.card-video, video.hero-video').forEach((video) => {
+    gsap.utils.toArray('video.card-video').forEach((video) => {
       video.muted = true;
       ScrollTrigger.create({
         trigger: video,
