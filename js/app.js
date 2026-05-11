@@ -91,10 +91,25 @@ if (heroVideo) {
   ['touchstart', 'click', 'pointerdown', 'scroll'].forEach((evt) => {
     document.addEventListener(evt, tryPlayHero, { once: true, passive: true });
   });
+  let heroInView = true;
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        heroInView = entry.isIntersecting;
+        if (heroInView) {
+          tryPlayHero();
+        } else if (!heroVideo.paused) {
+          heroVideo.pause();
+        }
+      });
+    }, { threshold: 0.05 });
+    io.observe(heroVideo);
+  }
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) tryPlayHero();
+    if (!document.hidden && heroInView) tryPlayHero();
   });
 }
+
 
 const mm = gsap.matchMedia();
 
