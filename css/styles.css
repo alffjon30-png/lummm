@@ -142,7 +142,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold); margin-bottom: 24px; }
 .eyebrow::before { content: ''; display: inline-block; width: 24px; height: 1px; background: var(--gold); }
 
-.hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 5vw, 64px); line-height: 1.05; letter-spacing: 0.005em; max-width: 16ch; margin-bottom: 22px; }
+.hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 8vw, 6rem); line-height: 1.05; letter-spacing: 0.005em; max-width: 16ch; margin-bottom: 22px; }
 .hero h1 em { font-style: italic; color: var(--gold); }
 .hero p.lede { color: var(--ink-soft); max-width: 46ch; font-size: 15px; margin-bottom: 32px; }
 
@@ -737,20 +737,34 @@ img, svg, video { max-width: 100%; height: auto; display: block; }
 }
 
 /* --- Hero background video --- */
+.hero.has-video {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
 .hero-video {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; object-position: center;
   z-index: 0; pointer-events: none;
   display: block;
+  transform-origin: center center;
+  will-change: transform;
+  animation: ken-burns 22s ease-in-out infinite alternate;
 }
 .hero.has-video::before { display: none; }
 .hero.has-video .hero-canvas { display: none; }
 .hero.has-video::after {
-  background:
-    radial-gradient(70% 100% at 0% 100%, rgba(7, 21, 30, 0.85), transparent 65%),
-    linear-gradient(90deg, rgba(7, 21, 30, 0.7) 0%, rgba(7, 21, 30, 0.15) 55%),
-    linear-gradient(180deg, rgba(7, 21, 30, 0.45) 0%, transparent 30%, rgba(7, 21, 30, 0.6) 100%);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+@keyframes ken-burns {
+  0%   { transform: scale(1.06) translate3d(0, 0, 0); }
+  100% { transform: scale(1.18) translate3d(-1.5%, -1.5%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-video { animation: none; transform: scale(1.04); }
 }
 
 /* --- Video-backed volume cards --- */
