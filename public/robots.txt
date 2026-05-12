@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Disallow asset folders from being indexed directly
+Disallow: /assets/
+Disallow: /videos/
+
+# Sitemap reference (add when sitemap.xml is generated)
+# Sitemap: https://lummm-five.vercel.app/sitemap.xml

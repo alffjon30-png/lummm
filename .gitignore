@@ -1,5 +1,14 @@
 node_modules
 dist
 .vite
+.vercel
 *.log
 .DS_Store
+
+# Never commit secrets — Supabase keys, Firebase config, etc.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
