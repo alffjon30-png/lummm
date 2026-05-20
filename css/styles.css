@@ -940,3 +940,38 @@ main { will-change: opacity, transform; }
 @media (min-width: 1280px) {
   .hero { min-height: 700px; }
 }
+
+/* --- Live catalog (Xano-driven) --- */
+#catalog-list[data-state="loading"] .book.book-skeleton .cover,
+#catalog-list[data-state="loading"] .book.book-skeleton h4,
+#catalog-list[data-state="loading"] .book.book-skeleton .sub,
+#catalog-list[data-state="loading"] .book.book-skeleton .price-tag {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  color: transparent;
+  border-radius: 6px;
+}
+#catalog-list[data-state="loading"] .book.book-skeleton h4,
+#catalog-list[data-state="loading"] .book.book-skeleton .sub,
+#catalog-list[data-state="loading"] .book.book-skeleton .price-tag { min-height: 1em; }
+#catalog-list[data-state="loading"] .book.book-skeleton:hover { transform: none; border-color: var(--line); }
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.catalog-empty {
+  grid-column: 1 / -1;
+  color: var(--ink-mute);
+  font-style: italic;
+  text-align: center;
+  padding: 32px 0;
+}
+.book .add:disabled { opacity: 0.5; cursor: not-allowed; }
+.book .add:disabled:hover { background: transparent; color: var(--ink-soft); border-color: var(--line-strong); }
+@media (prefers-reduced-motion: reduce) {
+  #catalog-list[data-state="loading"] .book.book-skeleton .cover,
+  #catalog-list[data-state="loading"] .book.book-skeleton h4,
+  #catalog-list[data-state="loading"] .book.book-skeleton .sub,
+  #catalog-list[data-state="loading"] .book.book-skeleton .price-tag { animation: none; }
+}

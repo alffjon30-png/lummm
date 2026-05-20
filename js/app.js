@@ -3,6 +3,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { initHero3D } from './hero3d.js';
+import { initBooks } from './books.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -62,6 +63,7 @@ if (heroH1 && !reduceMotionGlobal) {
 }
 
 initHero3D();
+initBooks();
 
 const heroVideo = document.querySelector('.hero-video');
 if (heroVideo) {
