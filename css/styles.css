@@ -967,6 +967,34 @@ main { will-change: opacity, transform; }
   text-align: center;
   padding: 32px 0;
 }
+.catalog-error {
+  grid-column: 1 / -1;
+  background: #2a0808;
+  border: 2px solid #ff3b3b;
+  color: #ffd9d9;
+  padding: 24px 28px;
+  border-radius: 8px;
+  font-family: var(--sans, 'Inter', system-ui, sans-serif);
+}
+.catalog-error strong {
+  display: block;
+  color: #ff5c5c;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.catalog-error-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: #ffb4b4;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+.catalog-error-hint {
+  font-size: 12px;
+  color: #ffd9d9aa;
+}
 .book .add:disabled { opacity: 0.5; cursor: not-allowed; }
 .book .add:disabled:hover { background: transparent; color: var(--ink-soft); border-color: var(--line-strong); }
 @media (prefers-reduced-motion: reduce) {
