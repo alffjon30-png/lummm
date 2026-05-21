@@ -53,10 +53,13 @@ function buildSkeleton() {
   return card;
 }
 
-function buildBookCard(book) {
+function buildBookCard(book, index) {
   const card = document.createElement('article');
-  card.className = 'book reveal';
-  card.setAttribute('data-reveal', '');
+  card.className = 'book';
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(16px)';
+  card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  card.style.transitionDelay = `${Math.min(index, 8) * 60}ms`;
 
   const cover = document.createElement('div');
   cover.className = 'cover';
@@ -137,32 +140,18 @@ function renderError(container, err) {
 
 function renderBooks(container, books) {
   container.replaceChildren();
-  books.forEach((book) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'color:#fff;padding:20px;border:1px solid #fff;margin-bottom:12px;background:#111;';
-    const grid = container.classList.contains('catalog') ? '1 / -1' : 'auto';
-    div.style.gridColumn = grid;
-
-    const h3 = document.createElement('h3');
-    h3.textContent = book.title || '(no title)';
-    h3.style.cssText = 'margin:0 0 6px 0;font-family:Cormorant Garamond, serif;font-size:20px;';
-
-    const author = document.createElement('p');
-    author.textContent = book.author || '(no author)';
-    author.style.cssText = 'margin:2px 0;opacity:0.85;';
-
-    const category = document.createElement('p');
-    category.textContent = book.category || '(no category)';
-    category.style.cssText = 'margin:2px 0;opacity:0.7;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;';
-
-    const price = document.createElement('p');
-    price.textContent = formatPrice(book.price) || '(no price)';
-    price.style.cssText = 'margin:6px 0 0 0;color:#d4a857;font-weight:600;';
-
-    div.append(h3, author, category, price);
-    container.appendChild(div);
+  const cards = books.map((book, i) => {
+    const card = buildBookCard(book, i);
+    container.appendChild(card);
+    return card;
   });
   container.dataset.state = 'ready';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cards.forEach((card) => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    });
+  }));
 }
 
 export async function initBooks(rootSelector = '#catalog-list') {
