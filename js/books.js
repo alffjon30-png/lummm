@@ -3,20 +3,6 @@ const API_BASE = import.meta.env.VITE_XANO_API_BASE
 
 const PLACEHOLDER_CARD_COUNT = 4;
 
-console.log('[books] module loaded, API_BASE =', API_BASE);
-
-if (typeof document !== 'undefined' && !document.querySelector('#books-mount-marker')) {
-  const marker = document.createElement('div');
-  marker.id = 'books-mount-marker';
-  marker.textContent = 'BOOKS.JS LOADED';
-  marker.style.cssText = [
-    'position:fixed', 'top:0', 'left:0', 'z-index:99999',
-    'background:#0f8', 'color:#000', 'padding:6px 12px',
-    'font:600 11px/1 ui-monospace,monospace', 'letter-spacing:0.15em'
-  ].join(';');
-  (document.body || document.documentElement).appendChild(marker);
-}
-
 export async function fetchBooks() {
   const res = await fetch(`${API_BASE}/books`, {
     method: 'GET',
@@ -156,28 +142,20 @@ function renderBooks(container, books) {
 }
 
 export async function initBooks(rootSelector = '#catalog-list') {
-  console.log('[books] initBooks fired, looking for', rootSelector);
   const container = document.querySelector(rootSelector);
-  if (!container) {
-    console.warn('[books] container not found:', rootSelector);
-    return;
-  }
-  console.log('[books] container found, rendering skeleton');
+  if (!container) return;
 
   renderSkeleton(container);
 
   try {
-    console.log('[books] fetching', `${API_BASE}/books`);
     const books = await fetchBooks();
-    console.log('[books] fetch ok, received', books.length, 'books');
     if (!books.length) {
       renderEmpty(container, 'No volumes in the archive yet. Check back soon.');
       return;
     }
     renderBooks(container, books);
-    console.log('[books] rendered', books.length, 'cards');
   } catch (err) {
-    console.error('[books] fetch FAILED', err);
+    console.error('[books] fetch failed', err);
     renderError(container, err);
   }
 }
