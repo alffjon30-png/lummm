@@ -941,122 +941,21 @@ main { will-change: opacity, transform; }
   .hero { min-height: 700px; }
 }
 
-/* --- Segment showcases (Xano-driven per-wing catalogs) --- */
-.segment-showcase.wing-medical    { --wing: #4ea3a0; --wing-bg: rgba(78,163,160,0.12);  --wing-border: rgba(78,163,160,0.32); }
-.segment-showcase.wing-rare       { --wing: #b88a52; --wing-bg: rgba(184,138,82,0.12);  --wing-border: rgba(184,138,82,0.32); }
-.segment-showcase.wing-philosophy { --wing: #a17ad1; --wing-bg: rgba(161,122,209,0.14); --wing-border: rgba(161,122,209,0.34); }
-.segment-showcase.wing-scifi      { --wing: #ec7d4a; --wing-bg: rgba(236,125,74,0.12);  --wing-border: rgba(236,125,74,0.32); }
-.segment-showcase .accent-pill {
-  color: var(--wing);
-  border: 1px solid var(--wing);
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: 100px;
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  background: transparent;
-}
-.segment-showcase {
-  position: relative;
-  padding: 88px max(24px, 5vw);
-  border-top: 1px solid var(--line);
-  isolation: isolate;
-}
-.segment-showcase::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 80% 50% at 20% 0%, var(--wing-bg, transparent) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.6;
-}
-.segment-showcase .segment-head {
-  max-width: 1280px;
-  margin: 0 auto 18px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "pill  pill"
-    "title cta"
-    "lede  cta";
-  column-gap: 32px;
-  row-gap: 10px;
-  align-items: end;
-}
-.segment-showcase .segment-head .accent-pill { grid-area: pill; }
-.segment-showcase .segment-head h2 {
-  grid-area: title;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(36px, 5vw, 60px);
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  margin: 6px 0 0;
-}
-.segment-showcase .segment-head .lede {
-  grid-area: lede;
-  color: var(--ink-soft);
-  max-width: 56ch;
-  font-size: 15px;
-  line-height: 1.55;
-  margin: 0;
-}
-.segment-showcase .segment-head .more {
-  grid-area: cta;
-  align-self: end;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--wing, var(--gold));
-  white-space: nowrap;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.segment-showcase .segment-head .more:hover {
-  opacity: 0.78;
-  transform: translateX(2px);
-}
-.segment-showcase .accent-bar {
-  max-width: 1280px;
-  margin: 0 auto 36px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--wing, var(--gold)) 0%, transparent 60%);
-}
-.segment-showcase .segment-catalog {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-.segment-showcase:first-of-type { border-top: none; }
-@media (max-width: 820px) {
-  .segment-showcase { padding: 64px 20px; }
-  .segment-showcase .segment-head {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "pill"
-      "title"
-      "lede"
-      "cta";
-    row-gap: 12px;
-  }
-  .segment-showcase .segment-head .more { align-self: start; }
-}
-
 /* --- Live catalog (Xano-driven) --- */
-#catalog-list[data-state="loading"] .book.book-skeleton .cover,
-#catalog-list[data-state="loading"] .book.book-skeleton h4,
-#catalog-list[data-state="loading"] .book.book-skeleton .sub,
-#catalog-list[data-state="loading"] .book.book-skeleton .price-tag {
+.catalog[data-state="loading"] .book.book-skeleton .cover,
+.catalog[data-state="loading"] .book.book-skeleton h4,
+.catalog[data-state="loading"] .book.book-skeleton .sub,
+.catalog[data-state="loading"] .book.book-skeleton .price-tag {
   background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
   color: transparent;
   border-radius: 6px;
 }
-#catalog-list[data-state="loading"] .book.book-skeleton h4,
-#catalog-list[data-state="loading"] .book.book-skeleton .sub,
-#catalog-list[data-state="loading"] .book.book-skeleton .price-tag { min-height: 1em; }
-#catalog-list[data-state="loading"] .book.book-skeleton:hover { transform: none; border-color: var(--line); }
+.catalog[data-state="loading"] .book.book-skeleton h4,
+.catalog[data-state="loading"] .book.book-skeleton .sub,
+.catalog[data-state="loading"] .book.book-skeleton .price-tag { min-height: 1em; }
+.catalog[data-state="loading"] .book.book-skeleton:hover { transform: none; border-color: var(--line); }
 @keyframes skeleton-shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -1099,8 +998,8 @@ main { will-change: opacity, transform; }
 .book .add:disabled { opacity: 0.5; cursor: not-allowed; }
 .book .add:disabled:hover { background: transparent; color: var(--ink-soft); border-color: var(--line-strong); }
 @media (prefers-reduced-motion: reduce) {
-  #catalog-list[data-state="loading"] .book.book-skeleton .cover,
-  #catalog-list[data-state="loading"] .book.book-skeleton h4,
-  #catalog-list[data-state="loading"] .book.book-skeleton .sub,
-  #catalog-list[data-state="loading"] .book.book-skeleton .price-tag { animation: none; }
+  .catalog[data-state="loading"] .book.book-skeleton .cover,
+  .catalog[data-state="loading"] .book.book-skeleton h4,
+  .catalog[data-state="loading"] .book.book-skeleton .sub,
+  .catalog[data-state="loading"] .book.book-skeleton .price-tag { animation: none; }
 }
