@@ -2,6 +2,11 @@ const API_BASE = import.meta.env.VITE_XANO_API_BASE
   || 'https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl';
 
 const PLACEHOLDER_CARD_COUNT = 4;
+const ALL_CATEGORY = 'All';
+
+let allBooks = [];
+let activeCategory = ALL_CATEGORY;
+let catalogContainer = null;
 
 export async function fetchBooks() {
   const res = await fetch(`${API_BASE}/books`, {
@@ -138,6 +143,49 @@ function renderError(container, err) {
   container.dataset.state = 'error';
 }
 
+function normalizeCategory(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function filterBooks(category) {
+  const requested = String(category || ALL_CATEGORY);
+  activeCategory = requested;
+  console.log('[filter] selected category:', requested);
+
+  if (!catalogContainer) return;
+
+  const normalized = normalizeCategory(requested);
+  const filtered = normalized === normalizeCategory(ALL_CATEGORY)
+    ? allBooks
+    : allBooks.filter((b) => normalizeCategory(b.category) === normalized);
+
+  document.querySelectorAll('[data-filter]').forEach((btn) => {
+    const match = normalizeCategory(btn.dataset.filter) === normalized;
+    btn.classList.toggle('is-active', match);
+    btn.setAttribute('aria-pressed', match ? 'true' : 'false');
+  });
+
+  if (!filtered.length) {
+    renderEmpty(catalogContainer, `No books found in this category.`);
+    console.log('[filter] rendered 0 books');
+    return;
+  }
+
+  renderBooks(catalogContainer, filtered);
+  console.log('[filter] rendered', filtered.length, 'books');
+}
+
+function bindFilterControls() {
+  document.querySelectorAll('[data-filter]').forEach((btn) => {
+    if (btn.dataset.filterBound === '1') return;
+    btn.dataset.filterBound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      filterBooks(btn.dataset.filter);
+    });
+  });
+}
+
 function renderBooks(container, books) {
   container.replaceChildren();
   const cards = books.map((book, i) => {
@@ -157,16 +205,19 @@ function renderBooks(container, books) {
 export async function initBooks(rootSelector = '#catalog-list') {
   const container = document.querySelector(rootSelector);
   if (!container) return;
+  catalogContainer = container;
 
+  bindFilterControls();
   renderSkeleton(container);
 
   try {
     const books = await fetchBooks();
+    allBooks = books;
     if (!books.length) {
       renderEmpty(container, 'No volumes in the archive yet. Check back soon.');
       return;
     }
-    renderBooks(container, books);
+    filterBooks(activeCategory);
   } catch (err) {
     console.error('[books] fetch failed', err);
     renderError(container, err);

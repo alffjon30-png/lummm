@@ -941,6 +941,41 @@ main { will-change: opacity, transform; }
   .hero { min-height: 700px; }
 }
 
+/* --- Catalog filters --- */
+.catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 28px 0;
+}
+.filter-pill {
+  font-family: var(--sans, 'Inter', system-ui, sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.filter-pill:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.filter-pill.is-active {
+  background: var(--gold);
+  color: #1a1208;
+  border-color: var(--gold);
+}
+.filter-pill:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* --- Live catalog (Xano-driven) --- */
 #catalog-list[data-state="loading"] .book.book-skeleton .cover,
 #catalog-list[data-state="loading"] .book.book-skeleton h4,
