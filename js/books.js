@@ -2,11 +2,8 @@ const API_BASE = import.meta.env.VITE_XANO_API_BASE
   || 'https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl';
 
 const PLACEHOLDER_CARD_COUNT = 4;
-const ALL_CATEGORY = 'All';
 
 let allBooks = [];
-let activeCategory = ALL_CATEGORY;
-let catalogContainer = null;
 
 export async function fetchBooks() {
   const res = await fetch(`${API_BASE}/books`, {
@@ -21,13 +18,15 @@ export async function fetchBooks() {
   return data;
 }
 
+function normalizeCategory(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
 function safeImageUrl(value) {
   if (typeof value !== 'string') return '';
   const trimmed = value.trim();
   if (!/^https:\/\//i.test(trimmed)) return '';
-  try {
-    new URL(trimmed);
-  } catch { return ''; }
+  try { new URL(trimmed); } catch { return ''; }
   return encodeURI(trimmed);
 }
 
@@ -143,49 +142,6 @@ function renderError(container, err) {
   container.dataset.state = 'error';
 }
 
-function normalizeCategory(value) {
-  return String(value || '').trim().toLowerCase();
-}
-
-export function filterBooks(category) {
-  const requested = String(category || ALL_CATEGORY);
-  activeCategory = requested;
-  console.log('[filter] selected category:', requested);
-
-  if (!catalogContainer) return;
-
-  const normalized = normalizeCategory(requested);
-  const filtered = normalized === normalizeCategory(ALL_CATEGORY)
-    ? allBooks
-    : allBooks.filter((b) => normalizeCategory(b.category) === normalized);
-
-  document.querySelectorAll('[data-filter]').forEach((btn) => {
-    const match = normalizeCategory(btn.dataset.filter) === normalized;
-    btn.classList.toggle('is-active', match);
-    btn.setAttribute('aria-pressed', match ? 'true' : 'false');
-  });
-
-  if (!filtered.length) {
-    renderEmpty(catalogContainer, `No books found in this category.`);
-    console.log('[filter] rendered 0 books');
-    return;
-  }
-
-  renderBooks(catalogContainer, filtered);
-  console.log('[filter] rendered', filtered.length, 'books');
-}
-
-function bindFilterControls() {
-  document.querySelectorAll('[data-filter]').forEach((btn) => {
-    if (btn.dataset.filterBound === '1') return;
-    btn.dataset.filterBound = '1';
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      filterBooks(btn.dataset.filter);
-    });
-  });
-}
-
 function renderBooks(container, books) {
   container.replaceChildren();
   const cards = books.map((book, i) => {
@@ -202,24 +158,32 @@ function renderBooks(container, books) {
   }));
 }
 
-export async function initBooks(rootSelector = '#catalog-list') {
-  const container = document.querySelector(rootSelector);
-  if (!container) return;
-  catalogContainer = container;
+export function renderCategoryBooks(category, container) {
+  if (!container) return 0;
+  const target = normalizeCategory(category);
+  const matches = allBooks.filter((b) => normalizeCategory(b.category) === target);
+  console.log(`[segment] rendering ${category}: ${matches.length} books`);
+  if (!matches.length) {
+    renderEmpty(container, 'New volumes coming to this wing soon.');
+    return 0;
+  }
+  renderBooks(container, matches);
+  return matches.length;
+}
 
-  bindFilterControls();
-  renderSkeleton(container);
+export async function initBooks() {
+  const segments = Array.from(document.querySelectorAll('[data-category]'));
+  if (!segments.length) return;
+
+  segments.forEach(renderSkeleton);
 
   try {
-    const books = await fetchBooks();
-    allBooks = books;
-    if (!books.length) {
-      renderEmpty(container, 'No volumes in the archive yet. Check back soon.');
-      return;
-    }
-    filterBooks(activeCategory);
+    allBooks = await fetchBooks();
+    segments.forEach((container) => {
+      renderCategoryBooks(container.dataset.category, container);
+    });
   } catch (err) {
     console.error('[books] fetch failed', err);
-    renderError(container, err);
+    segments.forEach((container) => renderError(container, err));
   }
 }
