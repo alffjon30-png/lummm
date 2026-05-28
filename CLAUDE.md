@@ -8,7 +8,8 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 - **Animation**: GSAP 3.12 + ScrollTrigger; Lenis smooth scroll wired into ScrollTrigger
 - **3D**: Three.js (only used on the index hero when no video is present)
 - **Type**: Cormorant Garamond (serif) + Inter (sans), Google Fonts
-- **No backend yet** — Supabase + Firebase Auth are planned but not wired
+- **Backend (live)**: Xano workspace `x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl` — public `GET /books` feeds the wing-page catalogs via `js/books.js`. No auth header; the endpoint is intentionally public per Xano workspace config. Override at build time with `VITE_XANO_API_BASE` (a fallback to the prod URL is baked in, so `.env` is optional).
+- **Backend (planned)**: Supabase (data) + Firebase or Supabase Auth — not wired
 
 ## Pages (entry points in `vite.config.js`)
 
@@ -23,7 +24,7 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 
 **Index** has no sidebar. Hero plays `/videos/hero-0511.mp4` (720p / 24fps / CRF 26 / 1.6 MB, re-encoded from a 12 MB source) autoplay-muted-loop with a darkened scrim. Only CTA in the hero is **Enter the archive**; the old **Watch intro** ghost button was removed because it pointed at a `#trending` anchor rather than real video. The wordmark `Lumina Literature` is an `<a class="brand" href="index.html">` on every page (gold hover, no underline) — clicking it returns to the landing. The Three.js procedural-book scene (`js/hero3d.js`) is **dormant whenever the hero has `.has-video` or a `.hero-video` element** — it stays in the codebase and is fully functional, but the video takes the slot. To switch back to the procedural scene, remove the `<video>` element + `has-video` class from `index.html`. Trending Volumes uses pinned 3D scroll-stack on desktop, both cards play video. Curated Segments uses arrow-row layout linking to each wing.
 
-**Wing pages** (marketplace / rare / philosophy / scifi) share a template: sidebar with `Segments` label + 4 cross-wing nav links + curator profile pinned at bottom; page head with accent pill ("Medical Accent: Cyan", "Philosophy · Amethyst" etc.) + accent bar; Collector's Highlight card with bespoke title/price/CTA; Curator's Notes card with stat row; 4-card catalog with type pills; "Transitioning to" divider linking the wings in a cycle (Medical → Philosophy & Ethics, Rare → Medical, Philosophy → Sci-Fi, Sci-Fi → Rare). The wing's accent color comes from `body.wing-{name}` setting `--wing`, `--wing-bg`, `--wing-border` CSS variables that everything wing-specific reads.
+**Wing pages** (marketplace / rare / philosophy / scifi) share a template: sidebar with `Segments` label + 4 cross-wing nav links + curator profile pinned at bottom; page head with accent pill ("Medical Accent: Cyan", "Philosophy · Amethyst" etc.) + accent bar; Collector's Highlight card with bespoke title/price/CTA; Curator's Notes card with stat row; **live `.catalog` grid populated from Xano** via `<div class="catalog" id="{wing}-books" data-category="{Category}">` — `js/books.js` does one shared fetch and renders each wing's books into its own container; "Transitioning to" divider linking the wings in a cycle (Medical → Philosophy & Ethics, Rare → Medical, Philosophy → Sci-Fi, Sci-Fi → Rare). The wing's accent color comes from `body.wing-{name}` setting `--wing`, `--wing-bg`, `--wing-border` CSS variables that everything wing-specific reads. The original static cards had a `.pillrow` + `.has-spark` sparkle on the bestseller — both removed when the markup went data-driven. If pills/sparkles need to come back, they should come from Xano fields (e.g. `tags: []`, `featured: bool`), not be re-hardcoded.
 
 **Librarian** (`librarian.html`) is the chat experience. Sidebar has The Archivist profile. Avatar-pill chat rows, white user bubble, suggestion chips, Library Aura panel with pulsing visual + Atmosphere/Intellectual Rigor/Chronology bars, Curator's Insight, Associated Themes pills.
 
@@ -41,8 +42,11 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 ├── package.json
 ├── css/styles.css          # Single stylesheet, layered sections (see below)
 ├── js/
-│   ├── app.js              # Entry: Lenis, char split, ScrollTrigger, magnetic CTAs, chat, sidebar
+│   ├── app.js              # Entry: Lenis, char split, ScrollTrigger, magnetic CTAs, chat, sidebar, initBooks()
+│   ├── books.js            # Xano /books fetch + per-wing catalog renderer
 │   └── hero3d.js           # Three.js scene; bails if hero has .has-video
+├── .env.example            # Documents VITE_XANO_API_BASE (optional override)
+├── vercel.json             # Security headers (CSP, HSTS, etc.) + cache-control routes
 └── public/
     └── videos/             # Local mp4 assets, served at /videos/*
         ├── hero-0511.mp4                                          # current hero
@@ -75,6 +79,28 @@ Key effects:
 - **Magnetic CTAs** — `.btn-light, .btn-ghost, .ask-librarian, .review-btn, .composer .send` pull toward cursor on `mousemove` (rAF-throttled), snap back with `elastic.out` on `mouseleave`.
 - **Scroll progress bar** — fixed top, scaleX driven by `ScrollTrigger.create({ start: 0, end: 'max' })`.
 - **Generic `[data-reveal]`** — fade-in scrubbed by `ScrollTrigger`. Trending cards are excluded when 3D stack is active.
+- **Dynamic catalog fade-in** — books rendered by `js/books.js` do **not** participate in `[data-reveal]`. The reveal pass runs once at matchMedia init via `gsap.utils.toArray('[data-reveal]')`, which snapshots existing elements only. Async-rendered cards inherit the `autoAlpha:0 / y:32` start state but never get animated to visible — they end up in the DOM, invisible. Instead, dynamic cards get a plain inline transition (`opacity 0→1`, `translateY 16→0`, 60ms stagger capped at index 8, 500ms duration) triggered by double-rAF after insertion. This is the one place the `.reveal` / `data-reveal` system is deliberately bypassed.
+
+## Live catalog (Xano)
+
+`js/books.js` owns the wing-page catalog rendering. The homepage is intentionally **not** data-driven — the original "Curated Segments" arrow rows and Trending Volumes stay static / motion-driven to preserve the cinematic entry feel.
+
+- **API base**: `https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl`. Override with `VITE_XANO_API_BASE` if you spin up a separate workspace. Hardcoded fallback in `books.js` so `.env` is optional.
+- **Single fetch**: `fetchBooks()` does one `GET /books` with `credentials:'omit'`, `cache:'no-store'`, `Accept: application/json`. Response is cached in module-scope `allBooks`.
+- **Distribution**: `initBooks()` queries `document.querySelectorAll('[data-category]')` and routes through `renderCategoryBooks(category, container)` for each. Works for any number of containers — one wing per page today, zero on the homepage.
+- **Wing → category mapping**:
+  | Page | `data-category` |
+  |---|---|
+  | `marketplace.html` | `Medical` |
+  | `philosophy.html` | `Philosophy` |
+  | `scifi.html` | `Sci-Fi` |
+  | `rare.html` | `Rare Editions` |
+- **Card field mapping**: `title → <h4>`, `author + category → .sub`, `price → .price-tag` (formatted `$X.XX`), `coverimage → .cover background-image` (validated `https://…` + `encodeURI`'d, never `innerHTML`'d), `stock > 0 → "Add"` else disabled `"Sold out"`. Every string field goes through `textContent`.
+- **Per-container states**: skeleton shimmer while loading → real cards on success → "New volumes coming to this wing soon." on filtered-to-empty → loud red **XANO FETCH FAILED** banner with the error message + endpoint URL on network/parse error. The error banner is deliberately impossible to miss — promoted from debug aid to permanent UX.
+- **Category matching**: `normalizeCategory()` = `String(v||'').trim().toLowerCase()` applied to both sides. So `"sci-fi"`, `"Sci-Fi"`, and `" SCI-FI "` all match.
+- **Console breadcrumb**: `[segment] rendering {Category}: N books` on each render, `console.error('[books] fetch failed', err)` on failure.
+- **CSP**: `connect-src` allows the Xano host. `img-src` allows `images.unsplash.com`, `plus.unsplash.com`, `i.postimg.cc`, `*.xano.io`, `*.xanocdn.com`. Any new image origin in the Xano payload will show as a CSP violation in DevTools — append to `vercel.json` then.
+- **Mounted from**: `js/app.js` imports `{ initBooks }` and calls it once, alongside `initHero3D()`. No other entry point needs touching to add the catalog to a new page — just drop a `<div class="catalog" data-category="…">` in that page's markup.
 
 ## CSS sections (in `css/styles.css`)
 
@@ -88,19 +114,24 @@ Single stylesheet that grew in append-only layers. Order is significant — late
 6. **Card video** (`.volume-card .card-video`): same pattern for trending cards.
 7. **3D stack** (`.trending.stack-3d`): overrides grid to `display: block` with `perspective: 1800px`, cards become `position: absolute`. Only active when JS adds the class on desktop.
 8. **Premium polish**: `.scroll-progress`, `.hero h1 .char`, focus-visible gold outline, drag-protect images.
+9. **Live catalog states** (after the responsive breakpoints, bottom of file): `.catalog[data-state="loading"] .book.book-skeleton` shimmer (transform-only on a 200% `background-position` gradient), `.catalog-empty` italic centered copy, `.catalog-error` red-on-dark banner with `.catalog-error-detail` (monospace error message) and `.catalog-error-hint`. `prefers-reduced-motion` flattens the shimmer.
 
 ## Conventions
 
 - **Imagery**: Unsplash photo IDs as URL params (`?w=...&q=80`); local videos in `public/videos/` referenced as `/videos/filename.mp4`.
 - **Icons**: inline SVG, `stroke-width: 1.6` or `1.8`, `fill: none, stroke: currentColor`. No icon library.
 - **Colors**: only via CSS variables (`var(--gold)`, `var(--medical)` etc.). Hex literals confined to gradient stops.
-- **Reveal entries**: add `data-reveal` to any element you want fading in on scroll. Hero items + section heads + cards already have it.
+- **Reveal entries**: add `data-reveal` to any element you want fading in on scroll. Hero items + section heads + cards already have it. **Do not** put `data-reveal` on elements that will be injected after page load — see "Dynamic catalog fade-in" in the Animation system.
+- **Live catalog containers**: any `.catalog` element on any page becomes data-driven if you give it a `data-category="…"`. `books.js` does the rest. No per-page wiring required.
+- **Network-derived content**: anything coming from Xano (or any future API) must go through `textContent` for strings and validated URLs (`https://` + `encodeURI`) for any URL interpolated into CSS. Never `innerHTML` a fetched string.
 - **Z-index stacking inside hero**: photo backdrop `0`, video/canvas `1`, scrim `::after` `2`, text content `3`.
 - **Mobile drawer toggle**: `.icon-btn[aria-label="menu"]` toggles `body.sidebar-open`. The hamburger only displays below 1100px.
 
 ## Hosting
 
-Deployed on Vercel at `https://lummm-five.vercel.app/`. Vercel's production-branch setting needs to point at `claude/setup-lumina-literature-3Czkf` (Settings → Git → Production Branch) so every push auto-deploys to prod. If left on `main`, prod will serve stale builds and you have to manually **Promote to Production** from the Deployments tab after each push. The Vercel Toolbar appears only to logged-in team members; disable in Settings → Advanced if it bothers you.
+Deployed on Vercel at `https://lummm-five.vercel.app/`. Production branch is set to `claude/setup-lumina-literature-3Czkf` under **Settings → Environments → Production → Branch Tracking** (Vercel moved this out of the Git settings page — it used to live there). Every push to that branch auto-deploys to prod. If the setting ever gets reset to `main`, prod will serve stale builds and you have to manually **Promote to Production** from the Deployments tab after each push. The Vercel Toolbar appears only to logged-in team members; disable in Settings → Advanced if it bothers you.
+
+**Important**: changing the Branch Tracking setting does **not** retroactively promote already-built preview deploys. After changing it, either re-deploy the latest commit from the Deployments tab or push a fresh commit to trigger a new prod build.
 
 ## Performance budget
 
@@ -108,12 +139,12 @@ Deployed on Vercel at `https://lummm-five.vercel.app/`. Vercel's production-bran
 - **GPU compositing rule** (also in the 3d-motion skill): only animate `transform` and `opacity`. Never `top`/`left`/`width`/`height`/`margin`.
 - **Long-lived video decodes**: any background-style video must be paused when offscreen via IntersectionObserver. ScrollTrigger's `onEnter` does not fire when the element starts already inside the active range, so don't rely on it for the initial play state.
 
-## Security posture (pre-backend)
+## Security posture
 
-The site is static — no auth, no user data, no API calls — but the security headers are already in place so when Supabase / Firebase Auth lands, nothing has to be unlocked retroactively.
+Static frontend + one public Xano `GET /books`. No auth, no user data submitted, no cookies. The security headers are already in place so when Supabase / Firebase Auth lands, nothing has to be unlocked retroactively.
 
 - **Security headers** live in `vercel.json` and apply to every route:
-  - **CSP**: `default-src 'self'`; only `fonts.googleapis.com` (CSS), `fonts.gstatic.com` (fonts), `images.unsplash.com` (images), and `d8j0ntlcm91z4.cloudfront.net` (the right Trending mp4) are allowlisted. `script-src 'self'` with no `'unsafe-inline'` or `'unsafe-eval'`. `frame-ancestors 'none'` kills clickjacking. `connect-src 'self'` means **any future Supabase or external API URL must be added here** or fetch will be blocked.
+  - **CSP**: `default-src 'self'`; `style-src 'self' 'unsafe-inline' fonts.googleapis.com`; `font-src 'self' fonts.gstatic.com`; `img-src 'self' data: images.unsplash.com plus.unsplash.com i.postimg.cc x8ki-letl-twmt.n7.xano.io *.xano.io *.xanocdn.com`; `media-src 'self' d8j0ntlcm91z4.cloudfront.net` (right Trending mp4); `connect-src 'self' x8ki-letl-twmt.n7.xano.io` (Xano `/books`). `script-src 'self'` with no `'unsafe-inline'` or `'unsafe-eval'`. `frame-ancestors 'none'` kills clickjacking. **Any future external API URL (Supabase, Firebase, Stripe, etc.) must be added to `connect-src`** or fetch will be blocked. New cover-image origins go in `img-src`.
   - **HSTS** with 2-year `max-age`, `includeSubDomains`, `preload`
   - **X-Frame-Options: DENY**, **X-Content-Type-Options: nosniff**
   - **Referrer-Policy: strict-origin-when-cross-origin**
@@ -121,9 +152,10 @@ The site is static — no auth, no user data, no API calls — but the security 
   - **X-XSS-Protection: 0** (modern recommendation — CSP supersedes the legacy filter)
   - **Cross-Origin-Opener-Policy: same-origin**
 - **Chat XSS fixed** — `appendMessage` in `js/app.js` uses `textContent` for the body and a `<template>` parse for the trusted avatar SVG. User input is never passed through `innerHTML`.
+- **Xano payload sandboxing** — `js/books.js` builds every card via `createElement` + `textContent`. The `coverimage` URL is validated as `https://…` via `URL()` + regex, then `encodeURI`'d before being interpolated into `background-image`. A Xano record containing `<script>` or `");}body{…` in any field is rendered inert.
 - **Input hardening** — search inputs `maxlength="120" autocomplete="off" spellcheck="false"`; the librarian chat prompt `maxlength="500" autocomplete="off"`. Caps the damage from paste-bombs.
 - **No client-side persistence** — no `localStorage`, no `sessionStorage`, no cookies set by the frontend. There is nothing to leak.
-- **No secrets in the frontend** — no API keys, no service URLs (yet). When Supabase lands, only the anon/public key goes in the frontend (never the service-role key).
+- **No secrets in the frontend** — the Xano endpoint is intentionally public (no key in URL or header). When Supabase lands, only the anon/public key goes in the frontend (never the service-role key).
 
 ### When backend is added
 
@@ -135,8 +167,12 @@ The site is static — no auth, no user data, no API calls — but the security 
 
 ## Planned (not yet wired)
 
-- Supabase for backend / data (not Supabase Auth)
+- **Search**: `GET /books/search?q=` — would need an input on each wing + new debounced renderer path in `books.js`. Wing pages already have a search input UI; just isn't wired.
+- **Single-book detail page**: `book.html?id=` consuming `GET /books/:id`. Add as a new entry point in `vite.config.js`.
+- **Cart / orders**: requires auth first.
+- Supabase for backend / data extensions (not Supabase Auth)
 - Firebase Auth (decision pending — Supabase Auth would be simpler if no Firebase-specific features are needed)
+- AI recommendations endpoint (post-auth)
 - Two pending Meta AI videos (links the user has are `meta.ai/create/...` session URLs, not direct mp4s) — destination unclear, likely a third video showcase or to replace the right Trending card
 
 ## Skills
@@ -152,3 +188,7 @@ Active development branch: `claude/setup-lumina-literature-3Czkf`. The `main` br
 - The `meta.ai/create/...` URLs the user shares for AI-generated videos are **not** direct mp4 URLs. They have to download and drop into `public/videos/`, or paste a real CDN URL.
 - GitHub's 100 MB hard limit per file applies. Current videos are well under.
 - The Three.js hero scene (`hero3d.js`) is dormant on `index.html` because the page uses a `<video>` instead. It still runs if you remove the video tag or the `.has-video` class.
+- **`data-reveal` on dynamic content is a footgun** — the reveal pass in `js/app.js` runs `gsap.utils.toArray('[data-reveal]')` once at matchMedia init, snapshotting existing DOM only. Any element added later that carries `data-reveal` inherits the `autoAlpha:0` start state with no animation to bring it back. This already burned us once on the catalog; see "Dynamic catalog fade-in" in the Animation system for the fix pattern.
+- **Vercel "Production Branch" lives under Environments now**, not Git settings. The old CLAUDE.md note pointing to Settings → Git → Production Branch is wrong on current Vercel UI — it's Settings → Environments → Production → Branch Tracking.
+- **Changing Branch Tracking does not retroactively promote existing preview deploys.** Either redeploy from the Deployments tab or push a new commit after the change.
+- **Homepage is intentionally static.** Several rounds of experiments tried per-wing catalog showcases on `/` — the final decision is that the homepage stays cinematic/navigational and all live catalog rendering happens inside the wing pages. Don't add data-driven book grids to `index.html` without explicit confirmation.
