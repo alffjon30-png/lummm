@@ -44,8 +44,9 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 ├── package.json
 ├── css/styles.css          # Single stylesheet, layered sections (see below)
 ├── js/
-│   ├── app.js              # Entry: Lenis, char split, ScrollTrigger, magnetic CTAs, chat, sidebar, initBooks(), initBookDetail()
-│   ├── books.js            # Xano /books + /books/:id; catalog renderer + book detail renderer
+│   ├── app.js              # Entry: Lenis, char split, ScrollTrigger, magnetic CTAs, chat, sidebar, initBooks(), initBookDetail(), initSearch()
+│   ├── books.js            # Xano /books + /books/:id; catalog renderer + book detail renderer; exposes ensureBooks() / getAllBooks() cache
+│   ├── search.js           # Topbar search dropdown — filters cached allBooks by title/author, lazy-loads on first focus
 │   └── hero3d.js           # Three.js scene; bails if hero has .has-video
 ├── .env.example            # Documents VITE_XANO_API_BASE (optional override)
 ├── vercel.json             # Security headers (CSP, HSTS, etc.) + cache-control routes
@@ -121,6 +122,19 @@ Key effects:
 - **Document title**: replaced with `{title} — Lumina Literature` once the record renders, so browser tabs/back-stack stay meaningful.
 - **Security**: `id` is `encodeURIComponent`'d into the URL. Every string field renders via `textContent`. The `coverimage` URL goes through the same `safeImageUrl()` validation as the catalog cards.
 
+### Cross-wing search (`js/search.js`)
+
+The topbar `.search` input is wired on every page that has one. Search is client-side, scoped to title + author, and shares the catalog cache with the wing pages so there are no per-keystroke fetches.
+
+- **Bootstrap**: `initSearch()` finds `input.search`, wraps it in a `.search-wrap` positioning context, and inserts a `.search-results` panel anchored below. The wrap is created in JS so no page-level markup edits are required.
+- **Lazy load**: on first focus, the input calls `ensureBooks()` (exported from `books.js`). On a wing page this is a no-op since `initBooks()` already cached `allBooks`. On the homepage it triggers the first fetch — only when the user actually wants to search. The promise is deduped so concurrent focus + wing-page load never double-fetch.
+- **Filter**: case-insensitive `includes()` match on `title` and `author`. Title hits sort before author-only hits. Capped at 8 results.
+- **States** (panel `data-state`): `hidden` (empty query), `loading` (first lazy fetch in flight), `ready` (results rendered), `empty` (`No volumes match "{query}".`), `error` (`The archive is briefly unreachable.`).
+- **Result row**: 36px cover thumbnail (validated `https://…` URL into CSS background-image) + serif title + author · category sub. Click navigates to `book.html?id={book.id}`.
+- **Dismiss**: Esc key, click outside the wrap, or clearing the input.
+- **Console**: `[search] query "<q>" → N hits` per keystroke (after the cache is loaded); `[search] load failed <err>` if the lazy fetch fails.
+- **Security**: all result strings via `textContent`; cover URLs through the same `safeImageUrl()` validation; the `book.id` is `encodeURIComponent`'d into the result href.
+
 ## CSS sections (in `css/styles.css`)
 
 Single stylesheet that grew in append-only layers. Order is significant — later rules win where specificity ties.
@@ -186,7 +200,7 @@ Static frontend + one public Xano `GET /books`. No auth, no user data submitted,
 
 ## Planned (not yet wired)
 
-- **Search**: `GET /books/search?q=` — would need an input on each wing + new debounced renderer path in `books.js`. Wing pages already have a search input UI; just isn't wired.
+- **Auth** (next milestone): Xano's built-in user table. Will need `connect-src` already allows Xano; just add the login endpoint, gate the cart actions, store the session token in an `httpOnly` cookie if Xano supports it (sessionStorage otherwise).
 - **Cart / orders**: the "Acquire Volume" button on `book.html` and the "Add" button on each catalog card are placeholders. Needs auth first.
 - Supabase for backend / data extensions (not Supabase Auth)
 - Firebase Auth (decision pending — Supabase Auth would be simpler if no Firebase-specific features are needed)

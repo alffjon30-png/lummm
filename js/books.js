@@ -4,6 +4,21 @@ const API_BASE = import.meta.env.VITE_XANO_API_BASE
 const PLACEHOLDER_CARD_COUNT = 4;
 
 let allBooks = [];
+let booksPromise = null;
+
+export function getAllBooks() {
+  return allBooks;
+}
+
+export function ensureBooks() {
+  if (allBooks.length) return Promise.resolve(allBooks);
+  if (!booksPromise) {
+    booksPromise = fetchBooks()
+      .then((data) => { allBooks = data; return allBooks; })
+      .catch((err) => { booksPromise = null; throw err; });
+  }
+  return booksPromise;
+}
 
 export async function fetchBooks() {
   const res = await fetch(`${API_BASE}/books`, {
@@ -189,7 +204,7 @@ export async function initBooks() {
   segments.forEach(renderSkeleton);
 
   try {
-    allBooks = await fetchBooks();
+    await ensureBooks();
     segments.forEach((container) => {
       renderCategoryBooks(container.dataset.category, container);
     });
