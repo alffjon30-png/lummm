@@ -21,6 +21,7 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 | `philosophy.html` | `/philosophy.html` | The Philosophy Rotunda | Prof. Adrien Lavoie · Emeritus Reader | `--philosophy` amethyst |
 | `scifi.html` | `/scifi.html` | The Speculative Wing | Dr. Kai Voronin · Speculative Curator | `--scifi` ember |
 | `librarian.html` | `/librarian.html` | The Librarian's Study (AI chat) | The Archivist · Deep Library Access | gold |
+| `book.html` | `/book.html?id={id}` | Single-volume detail (Xano-driven) | — | inherits via `body.wing-{name}` from the book's category |
 
 **Index** has no sidebar. Hero plays `/videos/hero-0511.mp4` (720p / 24fps / CRF 26 / 1.6 MB, re-encoded from a 12 MB source) autoplay-muted-loop with a darkened scrim. Only CTA in the hero is **Enter the archive**; the old **Watch intro** ghost button was removed because it pointed at a `#trending` anchor rather than real video. The wordmark `Lumina Literature` is an `<a class="brand" href="index.html">` on every page (gold hover, no underline) — clicking it returns to the landing. The Three.js procedural-book scene (`js/hero3d.js`) is **dormant whenever the hero has `.has-video` or a `.hero-video` element** — it stays in the codebase and is fully functional, but the video takes the slot. To switch back to the procedural scene, remove the `<video>` element + `has-video` class from `index.html`. Trending Volumes uses pinned 3D scroll-stack on desktop, both cards play video. Curated Segments uses arrow-row layout linking to each wing.
 
@@ -38,12 +39,13 @@ A cinematic, dark-themed static web app for a curated literary archive. Three pa
 ├── philosophy.html         # Philosophy Rotunda
 ├── scifi.html              # Speculative Wing
 ├── librarian.html          # Librarian's Study (chat)
-├── vite.config.js          # 6 entry points
+├── book.html               # Single-volume detail (?id=N — Xano-driven)
+├── vite.config.js          # 7 entry points
 ├── package.json
 ├── css/styles.css          # Single stylesheet, layered sections (see below)
 ├── js/
-│   ├── app.js              # Entry: Lenis, char split, ScrollTrigger, magnetic CTAs, chat, sidebar, initBooks()
-│   ├── books.js            # Xano /books fetch + per-wing catalog renderer
+│   ├── app.js              # Entry: Lenis, char split, ScrollTrigger, magnetic CTAs, chat, sidebar, initBooks(), initBookDetail()
+│   ├── books.js            # Xano /books + /books/:id; catalog renderer + book detail renderer
 │   └── hero3d.js           # Three.js scene; bails if hero has .has-video
 ├── .env.example            # Documents VITE_XANO_API_BASE (optional override)
 ├── vercel.json             # Security headers (CSP, HSTS, etc.) + cache-control routes
@@ -100,7 +102,24 @@ Key effects:
 - **Category matching**: `normalizeCategory()` = `String(v||'').trim().toLowerCase()` applied to both sides. So `"sci-fi"`, `"Sci-Fi"`, and `" SCI-FI "` all match.
 - **Console breadcrumb**: `[segment] rendering {Category}: N books` on each render, `console.error('[books] fetch failed', err)` on failure.
 - **CSP**: `connect-src` allows the Xano host. `img-src` allows `images.unsplash.com`, `plus.unsplash.com`, `i.postimg.cc`, `*.xano.io`, `*.xanocdn.com`. Any new image origin in the Xano payload will show as a CSP violation in DevTools — append to `vercel.json` then.
-- **Mounted from**: `js/app.js` imports `{ initBooks }` and calls it once, alongside `initHero3D()`. No other entry point needs touching to add the catalog to a new page — just drop a `<div class="catalog" data-category="…">` in that page's markup.
+- **Mounted from**: `js/app.js` imports `{ initBooks, initBookDetail }` and calls both once, alongside `initHero3D()`. No other entry point needs touching to add the catalog to a new page — just drop a `<div class="catalog" data-category="…">` in that page's markup.
+
+### Single-volume detail (`book.html?id=…`)
+
+`js/books.js` also owns the detail page. Clicking any card in any wing navigates to `book.html?id={book.id}` — book cards are now `<a class="book">` elements, not `<article>`, with the whole card as the link target. The `.add` button inside the card calls `e.preventDefault(); e.stopPropagation()` on click so future cart logic can short-circuit the navigation.
+
+- **Endpoint**: `GET /books/:id` on the same Xano workspace.
+- **Bootstrap**: `initBookDetail()` queries `#book-detail`, reads `id` from `URLSearchParams`, fetches one record, swaps the body's `wing-*` class so the page inherits the right accent.
+- **States** (same `data-state` pattern as the catalog):
+  - `loading` — cover-frame + line-block skeleton shimmer
+  - `ready` — two-column editorial layout (sticky cover on desktop, stacked on mobile)
+  - `not-found` — Xano 404 → "This volume is not in the archive." + return link to `/`
+  - `error` — anything else → red `XANO FETCH FAILED` banner with the message
+- **Rendered fields**: `coverimage` → framed cover with inset shadow, `category` → accent-pill, `title` → big serif h1 (clamp 36→68px), `author` → italic byline, `description` → lede paragraph, `price`/`stock`/`id` → 3-column meta strip ("№ {id}", "$X.XX", "N in archive"), CTA = "Acquire Volume" (or "Notify When Available" if stock=0).
+- **Return to Collection**: the back link's `href` + label is chosen from the book's `category`, not from `document.referrer` — opening a `?id=` URL directly still produces a correct destination. Mapping: Medical → marketplace.html · Philosophy → philosophy.html · Sci-Fi → scifi.html · Rare Editions → rare.html · anything else → index.html.
+- **Console breadcrumbs**: `[book] fetching id <id>` on load, `[book] render success <id>` on success, `[book] not found <id>` on 404, `[book] fetch failed <err>` on network/parse error.
+- **Document title**: replaced with `{title} — Lumina Literature` once the record renders, so browser tabs/back-stack stay meaningful.
+- **Security**: `id` is `encodeURIComponent`'d into the URL. Every string field renders via `textContent`. The `coverimage` URL goes through the same `safeImageUrl()` validation as the catalog cards.
 
 ## CSS sections (in `css/styles.css`)
 
@@ -168,8 +187,7 @@ Static frontend + one public Xano `GET /books`. No auth, no user data submitted,
 ## Planned (not yet wired)
 
 - **Search**: `GET /books/search?q=` — would need an input on each wing + new debounced renderer path in `books.js`. Wing pages already have a search input UI; just isn't wired.
-- **Single-book detail page**: `book.html?id=` consuming `GET /books/:id`. Add as a new entry point in `vite.config.js`.
-- **Cart / orders**: requires auth first.
+- **Cart / orders**: the "Acquire Volume" button on `book.html` and the "Add" button on each catalog card are placeholders. Needs auth first.
 - Supabase for backend / data extensions (not Supabase Auth)
 - Firebase Auth (decision pending — Supabase Auth would be simpler if no Firebase-specific features are needed)
 - AI recommendations endpoint (post-auth)
