@@ -20,42 +20,56 @@
 import { onAuthChange, getCurrentUser, getAuthToken, openAuthModal } from './auth.js';
 import { ensureBooks, getAllBooks, renderBookList } from './books.js';
 
-/* ===================== CONFIG — fill in when Xano CRUD is published ======= */
+/* ===================== CONFIG (live Xano favourites group) ================
+ *
+ * ⚠️ BACKEND CAVEAT — these endpoints are NOT user-scoped or auth-enforced:
+ *   - GET /favourites returns EVERY row in the table (no `where user = auth.id`)
+ *     and works without a token. We filter to the current user CLIENT-SIDE, but
+ *     that's cosmetic — the data is still readable by anyone.
+ *   - POST does not set the user from the token; it accepts user_idreference_user
+ *     as a plain input, so we send the authed user's id. The server should set
+ *     this from auth instead.
+ *   - DELETE has no ownership check.
+ * Recommended Xano fixes are documented in CLAUDE.md / the PR summary. The
+ * frontend below is written so that once the backend scopes by auth, the
+ * explicit user id we send + the client-side filter both become harmless.
+ * ------------------------------------------------------------------------- */
 
-// Base URL of the Xano API group that hosts the favorites endpoints.
-// Favorites likely live in the auth group (api:WitMFOZH) since they're
-// user-scoped, but CONFIRM once the endpoints exist. Same host either way, so
-// no CSP change is needed. Empty string => DEMO mode (no network).
-const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE || '';
+const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE
+  || 'https://x8ki-letl-twmt.n7.xano.io/api:bOggyrqN';
 
-// Route builders. Adjust paths to match the published endpoints.
 const ROUTES = {
-  list:   (base) => `${base}/favorites`,                                   // GET  → rows for the authed user
-  create: (base) => `${base}/favorites`,                                   // POST {bookInputField: <id>}
-  remove: (base, favId) => `${base}/favorites/${encodeURIComponent(favId)}` // DELETE one favorite row by its id
+  list:   (base) => `${base}/favourites`,                                    // GET  → favourite rows (NOT user-scoped server-side)
+  create: (base) => `${base}/favourites`,                                    // POST {book + user reference}
+  remove: (base, favId) => `${base}/favourites/${encodeURIComponent(favId)}` // DELETE one favourite row by its id
 };
 
-// Field-name mapping between our code and the Xano payloads.
+// Field-name mapping for the auto-generated Xano columns/inputs.
 const FIELDS = {
-  bookInput: 'book_id',                 // POST body field for the book reference (Xano reference inputs are usually <name>_id)
-  favRowId: 'id',                       // the favorite row's own id (used for DELETE)
-  bookFromRow: ['book', 'book_id', 'books_id', 'book_id_text'] // where the book id lives on a returned row (first match wins)
+  bookInput: 'book_idreference_books',   // POST body: book reference
+  userInput: 'user_idreference_user',    // POST body: user reference (sent from /auth/me — see caveat above)
+  favRowId: 'id',                        // favourite row id (used for DELETE)
+  bookFromRow: ['book_idreference_books'], // where the book id lives on a returned row
+  userFromRow: 'user_idreference_user'   // owning user id on a returned row (for client-side scoping)
 };
 
 const REQUEST_TIMEOUT_MS = 15000;
-function favoritesConfigured() { return !!FAVORITES_BASE; }
+
+function currentUserId() {
+  const u = getCurrentUser();
+  return u && u.id != null ? idStr(u.id) : '';
+}
 
 /* ===================== state ============================================== */
 
-// bookId(string) -> favorite row id (or the bookId itself in demo mode)
+// bookId(string) -> favourite row id
 let favByBook = new Map();
-let loaded = false;
-let loadPromise = null;
+let loadedUserId = null;   // user id that favByBook currently reflects (null = not loaded)
+let loadPromise = null;    // in-flight GET, shared so concurrent callers don't refetch
+let lastLoadError = null;  // last load failure (so the favorites page can show an error state)
 
 const favListeners = new Set();
 const hearts = new Set(); // injected heart buttons, for state refresh
-
-const DEMO_KEY = 'lumina_fav_demo'; // DEMO mode only — remove when endpoints land
 
 /* ===================== utilities ========================================= */
 
@@ -90,19 +104,6 @@ function bookIdFromRow(row) {
   return '';
 }
 
-/* ===================== DEMO persistence (remove when wired) =============== */
-
-function demoLoad() {
-  try {
-    const raw = sessionStorage.getItem(DEMO_KEY);
-    const ids = raw ? JSON.parse(raw) : [];
-    favByBook = new Map((Array.isArray(ids) ? ids : []).map((id) => [idStr(id), idStr(id)]));
-  } catch { favByBook = new Map(); }
-}
-function demoSave() {
-  try { sessionStorage.setItem(DEMO_KEY, JSON.stringify(getFavoriteBookIds())); } catch {}
-}
-
 /* ===================== network =========================================== */
 
 async function api(url, opts = {}) {
@@ -133,24 +134,23 @@ async function api(url, opts = {}) {
 
 /* ===================== load / add / remove =============================== */
 
-// Load the current user's favorites. Safe to call repeatedly (deduped).
-export function loadFavorites() {
-  if (!getCurrentUser()) {
-    favByBook = new Map();
-    loaded = true;
-    emitChange();
-    return Promise.resolve();
-  }
-  if (loaded) return Promise.resolve();
-  if (loadPromise) return loadPromise;
+export function getLoadError() { return lastLoadError; }
 
-  if (!favoritesConfigured()) {
-    console.warn('[favorites] DEMO mode — set VITE_XANO_FAVORITES_BASE to persist. Loading from sessionStorage.');
-    demoLoad();
-    loaded = true;
+// Load the current user's favourites. Deduped: repeated calls while loaded for
+// the same user (or while a request is in flight) reuse the result/promise, so
+// the many auth/render triggers don't each hit the network. Pass force=true to
+// bypass the cache (e.g. an explicit "retry").
+export function loadFavorites(force = false) {
+  const uid = currentUserId();
+  if (!uid) {
+    favByBook = new Map();
+    loadedUserId = null;
+    lastLoadError = null;
     emitChange();
     return Promise.resolve();
   }
+  if (loadPromise) return loadPromise;
+  if (!force && loadedUserId === uid && !lastLoadError) return Promise.resolve();
 
   console.log('[favorites] loading from', ROUTES.list(FAVORITES_BASE));
   loadPromise = api(ROUTES.list(FAVORITES_BASE))
@@ -158,17 +158,22 @@ export function loadFavorites() {
       const list = Array.isArray(rows) ? rows : (rows && Array.isArray(rows.items) ? rows.items : []);
       favByBook = new Map();
       list.forEach((row) => {
+        // Backend does not scope GET by user — filter client-side (see caveat).
+        if (idStr(row[FIELDS.userFromRow]) !== uid) return;
         const bid = bookIdFromRow(row);
         const favId = row && row[FIELDS.favRowId] != null ? row[FIELDS.favRowId] : bid;
         if (bid) favByBook.set(bid, favId);
       });
-      loaded = true;
-      console.log('[favorites] loaded', favByBook.size, 'favorites');
+      loadedUserId = uid;
+      lastLoadError = null;
+      console.log('[favorites] loaded', favByBook.size, 'favourites for user', uid);
       emitChange();
     })
     .catch((err) => {
+      // Leave loadedUserId unset so an explicit retry can refetch; surface the
+      // error so the favorites page shows an error state (not a false "empty").
       console.error('[favorites] load failed', err);
-      loaded = true; // don't wedge the UI; treat as empty
+      lastLoadError = err;
       emitChange();
     })
     .finally(() => { loadPromise = null; });
@@ -182,14 +187,17 @@ export async function addFavorite(bookId) {
   favByBook.set(id, id);
   emitChange();
   try {
-    if (!favoritesConfigured()) { demoSave(); return; }
+    const body = { [FIELDS.bookInput]: maybeNumber(id) };
+    // Send the user reference since the backend doesn't set it from auth yet.
+    const uid = currentUserId();
+    if (uid) body[FIELDS.userInput] = maybeNumber(uid);
     const created = await api(ROUTES.create(FAVORITES_BASE), {
       method: 'POST',
-      body: JSON.stringify({ [FIELDS.bookInput]: maybeNumber(id) })
+      body: JSON.stringify(body)
     });
     const favId = created && created[FIELDS.favRowId] != null ? created[FIELDS.favRowId] : id;
     favByBook.set(id, favId);
-    console.log('[favorites] saved book', id, '→ favorite', favId);
+    console.log('[favorites] saved book', id, '→ favourite', favId);
   } catch (err) {
     console.error('[favorites] add failed — reverting', err);
     favByBook.delete(id);
@@ -205,9 +213,8 @@ export async function removeFavorite(bookId) {
   favByBook.delete(id);
   emitChange();
   try {
-    if (!favoritesConfigured()) { demoSave(); return; }
     await api(ROUTES.remove(FAVORITES_BASE, favId), { method: 'DELETE' });
-    console.log('[favorites] removed book', id, '(favorite', favId + ')');
+    console.log('[favorites] removed book', id, '(favourite', favId + ')');
   } catch (err) {
     console.error('[favorites] remove failed — reverting', err);
     favByBook.set(id, favId);
@@ -341,19 +348,45 @@ function initFavoritesPage(rootEl) {
     return listContainer;
   }
 
+  function renderError() {
+    rootEl.replaceChildren();
+    rootEl.dataset.state = 'error';
+    const wrap = document.createElement('div');
+    wrap.className = 'favorites-gate';
+    const p = document.createElement('p');
+    p.textContent = 'We couldn’t load your favourites just now.';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-light';
+    btn.textContent = 'Try Again';
+    btn.addEventListener('click', () => { loadFavorites(true).then(renderForUser); });
+    wrap.append(p, btn);
+    rootEl.appendChild(wrap);
+  }
+
+  let rendering = false;
   async function renderForUser() {
-    rootEl.dataset.state = 'loading';
-    try {
-      await Promise.all([ensureBooks(), loadFavorites()]);
-    } catch (err) {
-      console.error('[favorites] page load failed', err);
-    }
     if (!getCurrentUser()) { renderGate('Sign in to view the volumes you’ve saved.', true); return; }
+    if (rendering) return;
+    rendering = true;
+
+    // Only show the loading state when data isn't ready yet (avoids flicker on
+    // in-place updates like unfavouriting from this page).
+    const ready = loadedUserId === currentUserId() && !lastLoadError;
+    if (!ready) { rootEl.replaceChildren(); rootEl.dataset.state = 'loading'; }
+
+    let booksErr = false;
+    try { await ensureBooks(); } catch { booksErr = true; }
+    await loadFavorites(); // deduped — collapses to one network call
+
+    rendering = false;
+    if (!getCurrentUser()) { renderGate('Sign in to view the volumes you’ve saved.', true); return; }
+    if (booksErr || lastLoadError) { renderError(); return; }
 
     const favIds = new Set(getFavoriteBookIds());
     const books = getAllBooks().filter((b) => favIds.has(idStr(b.id)));
     if (!books.length) {
-      renderGate('You haven’t saved any volumes yet. Tap the heart on any book to keep it here.', false);
+      renderGate('You haven’t saved any books yet. Tap the heart on any volume to keep it here.', false);
       return;
     }
     const container = ensureListContainer();
@@ -362,30 +395,17 @@ function initFavoritesPage(rootEl) {
     requestAnimationFrame(() => scanAndInject(container));
   }
 
-  // React to auth + favorites changes (e.g. unfavoriting removes the card).
+  // React to auth + favourites changes (e.g. unfavouriting removes the card).
   onAuthChange(() => { renderForUser(); });
-  onFavoritesChange(() => {
-    if (rootEl.dataset.state === 'list' || rootEl.dataset.state === 'gate') {
-      // only re-render the grid view in place when already showing the list
-      if (getCurrentUser()) renderForUser();
-    }
-  });
+  onFavoritesChange(() => { if (getCurrentUser()) renderForUser(); });
 }
 
 /* ===================== init ============================================== */
 
 export function initFavorites() {
-  // Keep favorites in sync with auth: reload on login, clear on logout.
-  onAuthChange((user) => {
-    loaded = false;
-    loadPromise = null;
-    if (user) {
-      loadFavorites();
-    } else {
-      favByBook = new Map();
-      emitChange();
-    }
-  });
+  // Keep favourites in sync with auth. loadFavorites() is keyed by user id and
+  // deduped, so it fetches once on login and clears on logout on its own.
+  onAuthChange(() => { loadFavorites(); });
 
   // Decorate existing + future book cards / detail page with hearts.
   scanAndInject(document);
