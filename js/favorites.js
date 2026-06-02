@@ -46,7 +46,12 @@ const ROUTES = {
 
 // Field-name mapping for the Xano columns/inputs.
 const FIELDS = {
-  bookInput: 'book_idreference_books',   // POST body: book reference (the ONLY input we send — never the user)
+  // POST body: the book reference, and ONLY the book (never the user — the
+  // server derives that from auth.id). We send BOTH candidate input names so
+  // this keeps working whether the published endpoint names the input `book`
+  // or the auto-generated `book_idreference_books`; Xano ignores undeclared
+  // inputs, so the extra key is harmless either way.
+  bookInput: ['book', 'book_idreference_books'],
   favRowId: 'id',                        // favourite row id (used for DELETE)
   bookIdFromRow: ['book_idreference_books', 'book_id', 'books_id', 'book'], // where the book id lives on a row
   bookObjFromRow: ['book', '_book', 'books'] // where the embedded related-book record lives (GET addon — requirement 5)
@@ -221,7 +226,9 @@ export async function addFavorite(bookId) {
   emitChange();
   try {
     // Send ONLY the book — the server sets the user from the auth token.
-    const body = { [FIELDS.bookInput]: maybeNumber(id) };
+    const v = maybeNumber(id);
+    const body = {};
+    FIELDS.bookInput.forEach((k) => { body[k] = v; });
     const created = await api(ROUTES.create(FAVORITES_BASE), {
       method: 'POST',
       body: JSON.stringify(body)
