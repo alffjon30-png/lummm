@@ -58,6 +58,25 @@ function setUser(user) {
  * API
  * ------------------------------------------------------------------ */
 
+// Network timeout so a stalled request can NEVER freeze the UI indefinitely.
+// On timeout the fetch rejects, surfacing a visible error instead of hanging.
+const REQUEST_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(url, opts = {}, ms = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      throw new Error('The request timed out. Please try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Xano returns the auth token under one of a few possible keys depending on
 // the function-stack wiring; accept whichever is present.
 function extractToken(data) {
@@ -80,7 +99,7 @@ async function readError(res) {
 async function postAuth(path, payload) {
   let res;
   try {
-    res = await fetch(`${AUTH_BASE}${path}`, {
+    res = await fetchWithTimeout(`${AUTH_BASE}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       credentials: 'omit',
@@ -88,6 +107,8 @@ async function postAuth(path, payload) {
       body: JSON.stringify(payload)
     });
   } catch (networkErr) {
+    // Preserve a timeout message; otherwise report unreachable.
+    if (networkErr && /timed out/i.test(networkErr.message)) throw networkErr;
     throw new Error('The archive is unreachable. Check your connection and try again.');
   }
 
@@ -104,26 +125,34 @@ async function postAuth(path, payload) {
   return res.json();
 }
 
+// Authenticate, store the token, and return it. Fetching the user record
+// (/auth/me) is left to the caller so a slow/flaky /auth/me can never block
+// the success+redirect — the token is already persisted at that point.
 export async function signup({ name, email, password }) {
+  console.log('[auth] (1) signup request start →', `${AUTH_BASE}/auth/signup`);
   // The Xano signup stack requires a third param literally named `field_value`
   // (it does NOT persist as the user's name — /auth/me returns name:"" — but it
   // is required, so we route the collected name into it to satisfy the contract).
-  const payload = { email, password, field_value: name || '' };
-  const data = await postAuth('/auth/signup', payload);
+  const data = await postAuth('/auth/signup', { email, password, field_value: name || '' });
+  console.log('[auth] (2) signup response received');
   const token = extractToken(data);
   if (!token) throw new Error('Signup succeeded but no session token was returned.');
+  console.log('[auth] (3) auth token received (len ' + token.length + ')');
   setToken(token);
-  const user = await fetchMe();
-  return user;
+  console.log('[auth] (4) auth token stored in sessionStorage');
+  return token;
 }
 
 export async function login({ email, password }) {
+  console.log('[auth] (1) login request start →', `${AUTH_BASE}/auth/login`);
   const data = await postAuth('/auth/login', { email, password });
+  console.log('[auth] (2) login response received');
   const token = extractToken(data);
   if (!token) throw new Error('Login succeeded but no session token was returned.');
+  console.log('[auth] (3) auth token received (len ' + token.length + ')');
   setToken(token);
-  const user = await fetchMe();
-  return user;
+  console.log('[auth] (4) auth token stored in sessionStorage');
+  return token;
 }
 
 // GET /auth/me with the bearer token. Throws on network/parse error.
@@ -132,17 +161,20 @@ export async function fetchMe() {
   const token = getToken();
   if (!token) { setUser(null); return null; }
 
+  console.log('[auth] (5) GET /auth/me request start');
   let res;
   try {
-    res = await fetch(`${AUTH_BASE}/auth/me`, {
+    res = await fetchWithTimeout(`${AUTH_BASE}/auth/me`, {
       method: 'GET',
       headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
       credentials: 'omit',
       cache: 'no-store'
     });
   } catch (networkErr) {
+    if (networkErr && /timed out/i.test(networkErr.message)) throw networkErr;
     throw new Error('The archive is unreachable.');
   }
+  console.log('[auth] (6) GET /auth/me response received →', res.status);
 
   if (res.status === 401 || res.status === 403) {
     clearToken();
@@ -333,7 +365,11 @@ function buildModal() {
 
     const dest = resolveRedirect();
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.setTimeout(() => { window.location.assign(dest); }, reduce ? 250 : 1100);
+    console.log('[auth] (7) redirect start → ' + dest + ' (in ' + (reduce ? 250 : 1100) + 'ms)');
+    window.setTimeout(() => {
+      console.log('[auth] (8) redirect complete — navigating to ' + dest);
+      window.location.assign(dest);
+    }, reduce ? 250 : 1100);
   }
 
   function applyMode(next) {
@@ -414,13 +450,29 @@ function buildModal() {
     const submittedMode = mode;
     setBusy(true);
     try {
-      const user = submittedMode === 'login'
-        ? await login({ email, password })
-        : await signup({ name, email, password });
-      // Token stored + /auth/me fetched inside login()/signup(); user is set.
-      console.log('[auth] %s success', submittedMode);
+      // Step 1-4: authenticate + store token (throws on bad creds / network).
+      if (submittedMode === 'login') {
+        await login({ email, password });
+      } else {
+        await signup({ name, email, password });
+      }
+
+      // Step 5-6: fetch the user record — NON-FATAL. The token is already
+      // stored, so even if /auth/me is slow/blocked we still redirect; the
+      // destination page's startup fetchMe() will populate the logged-in
+      // state. This guarantees a successful login can never hang here.
+      let user = null;
+      try {
+        user = await fetchMe();
+      } catch (meErr) {
+        console.warn('[auth] /auth/me failed after auth — redirecting anyway', meErr);
+      }
+
+      // Step 7-8: success feedback + redirect.
+      console.log('[auth] ' + submittedMode + ' success — proceeding to redirect');
       showSuccessAndRedirect(submittedMode, user);
     } catch (err) {
+      // Failed authentication: show the error, re-enable the form (never hang).
       console.error('[auth] submit failed', err);
       setBusy(false);
       showError(err && err.message ? err.message : 'Something went wrong. Please try again.');
