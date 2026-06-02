@@ -18,7 +18,8 @@ export default defineConfig({
         rare: resolve(__dirname, 'rare.html'),
         philosophy: resolve(__dirname, 'philosophy.html'),
         scifi: resolve(__dirname, 'scifi.html'),
-        book: resolve(__dirname, 'book.html')
+        book: resolve(__dirname, 'book.html'),
+        favorites: resolve(__dirname, 'favorites.html')
       }
     }
   }

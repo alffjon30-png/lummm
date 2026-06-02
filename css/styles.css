@@ -1542,6 +1542,78 @@ main { will-change: opacity, transform; }
 .account-logout:hover { background: rgba(217, 124, 102, 0.12); color: #f0c3b6; }
 .account-logout svg { width: 16px; height: 16px; flex-shrink: 0; }
 
+/* Account menu link (My Favorites) — shares the row look with logout */
+.account-link {
+  width: 100%;
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.account-link:hover { background: rgba(255,255,255,0.04); color: var(--ink); }
+.account-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ------------------------------------------------------------------ *
+ * Favorites — heart buttons + favorites page
+ * ------------------------------------------------------------------ */
+
+/* Heart button overlaid on a book card cover */
+.fav-heart {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 3;
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(6, 18, 26, 0.5);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.fav-heart svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.fav-heart:hover { transform: scale(1.1); border-color: rgba(255,255,255,0.4); }
+.fav-heart:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.fav-heart.is-active { color: var(--gold); border-color: var(--gold-soft); }
+.fav-heart.is-active svg { fill: var(--gold); stroke: var(--gold); }
+.fav-heart.is-active { animation: fav-pop 0.32s cubic-bezier(0.2, 1.3, 0.4, 1); }
+@keyframes fav-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+/* Larger heart on the book detail cover */
+.fav-heart-lg { width: 44px; height: 44px; top: 14px; right: 14px; }
+.fav-heart-lg svg { width: 22px; height: 22px; }
+
+/* Favorites page */
+#favorites-root[data-state="loading"]::before {
+  content: 'Gathering your saved volumes…';
+  display: block;
+  padding: 48px 0;
+  text-align: center;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.favorites-gate {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  text-align: center;
+  padding: 64px 24px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.favorites-gate p {
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.favorites-gate .btn { width: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .fav-heart, .fav-heart.is-active { animation: none; transition: none; }
+}
+
 @media (max-width: 640px) {
   .auth-chip { max-width: 90px; }
   .account-menu { top: 60px; right: 12px; left: 12px; width: auto; }

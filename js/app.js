@@ -6,6 +6,7 @@ import { initHero3D } from './hero3d.js';
 import { initBooks, initBookDetail } from './books.js';
 import { initSearch } from './search.js';
 import { initAuth } from './auth.js';
+import { initFavorites } from './favorites.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -69,6 +70,7 @@ initBooks();
 initBookDetail();
 initSearch();
 initAuth();
+initFavorites();
 
 const heroVideo = document.querySelector('.hero-video');
 if (heroVideo) {

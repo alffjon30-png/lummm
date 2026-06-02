@@ -184,6 +184,19 @@ function renderBooks(container, books) {
   }));
 }
 
+// Render an explicit list of book objects into a container, reusing the same
+// card markup + fade-in as the catalogs. Used by the favorites page; the wing
+// catalogs continue to use renderCategoryBooks() unchanged.
+export function renderBookList(container, books) {
+  if (!container) return 0;
+  if (!books || !books.length) {
+    renderEmpty(container, 'No volumes here yet.');
+    return 0;
+  }
+  renderBooks(container, books);
+  return books.length;
+}
+
 export function renderCategoryBooks(category, container) {
   if (!container) return 0;
   const target = normalizeCategory(category);

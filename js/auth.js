@@ -41,6 +41,12 @@ export function getCurrentUser() {
   return currentUser;
 }
 
+// Exposed so feature modules (e.g. favorites) can authorize their own
+// requests with the stored session token without duplicating the key.
+export function getAuthToken() {
+  return getToken();
+}
+
 export function onAuthChange(fn) {
   listeners.add(fn);
   fn(currentUser);
@@ -193,6 +199,13 @@ export function logout() {
   setUser(null);
 }
 
+// Reference to the login/signup modal, set once initAuth() builds it, so other
+// modules (e.g. favorites) can prompt an unauthenticated user to sign in.
+let modalController = null;
+export function openAuthModal(mode = 'login') {
+  if (modalController) modalController.open(mode);
+}
+
 /* ------------------------------------------------------------------ *
  * UI
  * ------------------------------------------------------------------ */
@@ -201,7 +214,8 @@ const ICON = {
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-  spinner: '<svg class="auth-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>'
+  spinner: '<svg class="auth-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>'
 };
 
 function svg(markup) {
@@ -527,6 +541,15 @@ function buildAccountMenu(onLogout) {
   headText.append(nameEl, emailEl);
   head.append(avatar, headText);
 
+  // Link to the favorites page (logged-in only — the menu only shows when authed).
+  const favLink = document.createElement('a');
+  favLink.className = 'account-link';
+  favLink.href = 'favorites.html';
+  favLink.appendChild(svg(ICON.heart));
+  const favLabel = document.createElement('span');
+  favLabel.textContent = 'My Favorites';
+  favLink.appendChild(favLabel);
+
   const logoutBtn = document.createElement('button');
   logoutBtn.type = 'button';
   logoutBtn.className = 'account-logout';
@@ -535,7 +558,7 @@ function buildAccountMenu(onLogout) {
   logoutLabel.textContent = 'Sign out';
   logoutBtn.appendChild(logoutLabel);
 
-  menu.append(head, logoutBtn);
+  menu.append(head, favLink, logoutBtn);
 
   logoutBtn.addEventListener('click', () => {
     onLogout();
@@ -574,6 +597,7 @@ export function initAuth() {
   topbarRight.insertBefore(chip, profileBtn);
 
   const modal = buildModal();
+  modalController = modal;
   const account = buildAccountMenu(() => { logout(); });
   // Appended to <body> (not the topbar): the topbar's backdrop-filter would
   // otherwise become the containing block for the menu's position:fixed.
