@@ -22,35 +22,34 @@ import { ensureBooks, getAllBooks, renderBookList } from './books.js';
 
 /* ===================== CONFIG (live Xano favourites group) ================
  *
- * ⚠️ BACKEND CAVEAT — these endpoints are NOT user-scoped or auth-enforced:
- *   - GET /favourites returns EVERY row in the table (no `where user = auth.id`)
- *     and works without a token. We filter to the current user CLIENT-SIDE, but
- *     that's cosmetic — the data is still readable by anyone.
- *   - POST does not set the user from the token; it accepts user_idreference_user
- *     as a plain input, so we send the authed user's id. The server should set
- *     this from auth instead.
- *   - DELETE has no ownership check.
- * Recommended Xano fixes are documented in CLAUDE.md / the PR summary. The
- * frontend below is written so that once the backend scopes by auth, the
- * explicit user id we send + the client-side filter both become harmless.
+ * Secured contract (server-side, see the Xano notes in the PR summary):
+ *   - GET /favourites requires auth and returns ONLY the authed user's rows
+ *     (Query All + filter `user = auth.id`), with the related book record
+ *     embedded via an addon so the favorites page renders without a second
+ *     fetch.
+ *   - POST /favourites sets the user from the auth token; the frontend sends
+ *     ONLY the book reference, never a user id.
+ *   - DELETE verifies ownership server-side.
+ * The frontend therefore trusts server scoping — it does NOT send or filter on
+ * a user id. It prefers the embedded book record and falls back to the catalog
+ * cache only if a row lacks it.
  * ------------------------------------------------------------------------- */
 
 const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE
   || 'https://x8ki-letl-twmt.n7.xano.io/api:bOggyrqN';
 
 const ROUTES = {
-  list:   (base) => `${base}/favourites`,                                    // GET  → favourite rows (NOT user-scoped server-side)
-  create: (base) => `${base}/favourites`,                                    // POST {book + user reference}
+  list:   (base) => `${base}/favourites`,                                    // GET  → the AUTHED user's rows (server-scoped)
+  create: (base) => `${base}/favourites`,                                    // POST { book reference } — server sets user from auth
   remove: (base, favId) => `${base}/favourites/${encodeURIComponent(favId)}` // DELETE one favourite row by its id
 };
 
-// Field-name mapping for the auto-generated Xano columns/inputs.
+// Field-name mapping for the Xano columns/inputs.
 const FIELDS = {
-  bookInput: 'book_idreference_books',   // POST body: book reference
-  userInput: 'user_idreference_user',    // POST body: user reference (sent from /auth/me — see caveat above)
+  bookInput: 'book_idreference_books',   // POST body: book reference (the ONLY input we send — never the user)
   favRowId: 'id',                        // favourite row id (used for DELETE)
-  bookFromRow: ['book_idreference_books'], // where the book id lives on a returned row
-  userFromRow: 'user_idreference_user'   // owning user id on a returned row (for client-side scoping)
+  bookIdFromRow: ['book_idreference_books', 'book_id', 'books_id', 'book'], // where the book id lives on a row
+  bookObjFromRow: ['book', '_book', 'books'] // where the embedded related-book record lives (GET addon — requirement 5)
 };
 
 const REQUEST_TIMEOUT_MS = 15000;
@@ -64,6 +63,8 @@ function currentUserId() {
 
 // bookId(string) -> favourite row id
 let favByBook = new Map();
+// bookId(string) -> embedded book record from the GET addon (for the page)
+let favBookData = new Map();
 let loadedUserId = null;   // user id that favByBook currently reflects (null = not loaded)
 let loadPromise = null;    // in-flight GET, shared so concurrent callers don't refetch
 let lastLoadError = null;  // last load failure (so the favorites page can show an error state)
@@ -83,6 +84,21 @@ export function getFavoriteBookIds() {
   return [...favByBook.keys()];
 }
 
+// True when every favourite already has its book record embedded (from the GET
+// addon), so the favorites page needs no separate /books fetch.
+export function favoritesHaveBookData() {
+  for (const bid of favByBook.keys()) if (!favBookData.has(bid)) return false;
+  return favByBook.size > 0;
+}
+
+// Book records for the favorites page: prefer the embedded record, fall back to
+// the catalog cache (pass it in) for any row that lacked embedded data.
+export function getFavoriteBooks(cache = []) {
+  return getFavoriteBookIds()
+    .map((bid) => favBookData.get(bid) || cache.find((b) => idStr(b.id) === bid))
+    .filter(Boolean);
+}
+
 export function onFavoritesChange(fn) {
   favListeners.add(fn);
   try { fn(); } catch (e) { console.error('[favorites] listener failed', e); }
@@ -94,9 +110,21 @@ function emitChange() {
   favListeners.forEach((fn) => { try { fn(); } catch (e) { console.error('[favorites] listener failed', e); } });
 }
 
+// The embedded related-book record (from the GET addon), or null.
+function bookObjFromRow(row) {
+  if (!row || typeof row !== 'object') return null;
+  for (const key of FIELDS.bookObjFromRow) {
+    const v = row[key];
+    if (v && typeof v === 'object' && v.id != null && (v.title != null || v.coverimage != null)) return v;
+  }
+  return null;
+}
+
 function bookIdFromRow(row) {
   if (!row || typeof row !== 'object') return '';
-  for (const key of FIELDS.bookFromRow) {
+  const obj = bookObjFromRow(row);
+  if (obj) return idStr(obj.id);
+  for (const key of FIELDS.bookIdFromRow) {
     if (row[key] != null && typeof row[key] !== 'object') return idStr(row[key]);
     // expanded reference object, e.g. { book: { id: 7 } }
     if (row[key] && typeof row[key] === 'object' && row[key].id != null) return idStr(row[key].id);
@@ -144,6 +172,7 @@ export function loadFavorites(force = false) {
   const uid = currentUserId();
   if (!uid) {
     favByBook = new Map();
+    favBookData = new Map();
     loadedUserId = null;
     lastLoadError = null;
     emitChange();
@@ -155,14 +184,18 @@ export function loadFavorites(force = false) {
   console.log('[favorites] loading from', ROUTES.list(FAVORITES_BASE));
   loadPromise = api(ROUTES.list(FAVORITES_BASE))
     .then((rows) => {
+      // GET is server-scoped to the authed user — we trust it and do NOT
+      // filter by a user id (the response may not even expose one).
       const list = Array.isArray(rows) ? rows : (rows && Array.isArray(rows.items) ? rows.items : []);
       favByBook = new Map();
+      favBookData = new Map();
       list.forEach((row) => {
-        // Backend does not scope GET by user — filter client-side (see caveat).
-        if (idStr(row[FIELDS.userFromRow]) !== uid) return;
         const bid = bookIdFromRow(row);
+        if (!bid) return;
         const favId = row && row[FIELDS.favRowId] != null ? row[FIELDS.favRowId] : bid;
-        if (bid) favByBook.set(bid, favId);
+        favByBook.set(bid, favId);
+        const obj = bookObjFromRow(row); // embedded related-book record (addon)
+        if (obj) favBookData.set(bid, obj);
       });
       loadedUserId = uid;
       lastLoadError = null;
@@ -187,10 +220,8 @@ export async function addFavorite(bookId) {
   favByBook.set(id, id);
   emitChange();
   try {
+    // Send ONLY the book — the server sets the user from the auth token.
     const body = { [FIELDS.bookInput]: maybeNumber(id) };
-    // Send the user reference since the backend doesn't set it from auth yet.
-    const uid = currentUserId();
-    if (uid) body[FIELDS.userInput] = maybeNumber(uid);
     const created = await api(ROUTES.create(FAVORITES_BASE), {
       method: 'POST',
       body: JSON.stringify(body)
@@ -369,30 +400,34 @@ function initFavoritesPage(rootEl) {
     if (!getCurrentUser()) { renderGate('Sign in to view the volumes you’ve saved.', true); return; }
     if (rendering) return;
     rendering = true;
+    try {
+      // Only show the loading state when data isn't ready yet (avoids flicker on
+      // in-place updates like unfavouriting from this page).
+      const ready = loadedUserId === currentUserId() && !lastLoadError;
+      if (!ready) { rootEl.replaceChildren(); rootEl.dataset.state = 'loading'; }
 
-    // Only show the loading state when data isn't ready yet (avoids flicker on
-    // in-place updates like unfavouriting from this page).
-    const ready = loadedUserId === currentUserId() && !lastLoadError;
-    if (!ready) { rootEl.replaceChildren(); rootEl.dataset.state = 'loading'; }
+      await loadFavorites(); // server-scoped; embeds the related book record
 
-    let booksErr = false;
-    try { await ensureBooks(); } catch { booksErr = true; }
-    await loadFavorites(); // deduped — collapses to one network call
+      if (!getCurrentUser()) { renderGate('Sign in to view the volumes you’ve saved.', true); return; }
+      if (lastLoadError) { renderError(); return; }
 
-    rendering = false;
-    if (!getCurrentUser()) { renderGate('Sign in to view the volumes you’ve saved.', true); return; }
-    if (booksErr || lastLoadError) { renderError(); return; }
-
-    const favIds = new Set(getFavoriteBookIds());
-    const books = getAllBooks().filter((b) => favIds.has(idStr(b.id)));
-    if (!books.length) {
-      renderGate('You haven’t saved any books yet. Tap the heart on any volume to keep it here.', false);
-      return;
+      // Fall back to the catalog cache ONLY for favourites missing embedded data.
+      let cache = [];
+      if (favByBook.size && !favoritesHaveBookData()) {
+        try { cache = await ensureBooks(); } catch { cache = getAllBooks(); }
+      }
+      const books = getFavoriteBooks(cache);
+      if (!books.length) {
+        renderGate('You haven’t saved any books yet. Tap the heart on any volume to keep it here.', false);
+        return;
+      }
+      const container = ensureListContainer();
+      renderBookList(container, books);
+      // hearts get injected by the global observer; nudge for immediacy
+      requestAnimationFrame(() => scanAndInject(container));
+    } finally {
+      rendering = false;
     }
-    const container = ensureListContainer();
-    renderBookList(container, books);
-    // hearts get injected by the global observer; nudge for immediacy
-    requestAnimationFrame(() => scanAndInject(container));
   }
 
   // React to auth + favourites changes (e.g. unfavouriting removes the card).
