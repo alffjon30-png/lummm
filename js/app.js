@@ -5,6 +5,7 @@ import 'lenis/dist/lenis.css';
 import { initHero3D } from './hero3d.js';
 import { initBooks, initBookDetail } from './books.js';
 import { initSearch } from './search.js';
+import { initAuth } from './auth.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -67,6 +68,7 @@ initHero3D();
 initBooks();
 initBookDetail();
 initSearch();
+initAuth();
 
 const heroVideo = document.querySelector('.hero-video');
 if (heroVideo) {
