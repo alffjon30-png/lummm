@@ -167,13 +167,29 @@ export function logout() {
 
 const ICON = {
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
-  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  spinner: '<svg class="auth-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>'
 };
 
 function svg(markup) {
   const tmpl = document.createElement('template');
   tmpl.innerHTML = markup; // trusted, hard-coded SVG only
   return tmpl.content.cloneNode(true);
+}
+
+// Where to send the user after a successful login/signup.
+// Honors a same-origin relative ?redirect=<page>.html (the "intended
+// destination" — e.g. a future gated action can bounce through login),
+// otherwise defaults to the homepage. Open-redirect safe: only a bare
+// relative .html filename (optionally with a query) is accepted — no
+// leading slash, no "//", no protocol.
+function resolveRedirect() {
+  try {
+    const raw = new URLSearchParams(window.location.search).get('redirect');
+    if (raw && /^[A-Za-z0-9_-]+\.html(\?[^\s/\\]*)?$/.test(raw)) return raw;
+  } catch { /* ignore */ }
+  return 'index.html';
 }
 
 function userDisplayName(user) {
@@ -258,7 +274,20 @@ function buildModal() {
 
   form.append(nameField.wrap, emailField.wrap, passwordField.wrap, errorBox, submit);
 
-  modal.append(closeBtn, eyebrow, heading, subhead, tabs, form);
+  // Success panel (shown after login/signup succeeds, just before redirect)
+  const successPanel = document.createElement('div');
+  successPanel.className = 'auth-success';
+  successPanel.hidden = true;
+  const successMark = document.createElement('div');
+  successMark.className = 'auth-success-mark';
+  successMark.appendChild(svg(ICON.check));
+  const successTitle = document.createElement('div');
+  successTitle.className = 'auth-success-title';
+  const successSub = document.createElement('div');
+  successSub.className = 'auth-success-sub';
+  successPanel.append(successMark, successTitle, successSub);
+
+  modal.append(closeBtn, eyebrow, heading, subhead, tabs, form, successPanel);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
@@ -274,14 +303,49 @@ function buildModal() {
     busy = state;
     submit.disabled = state;
     submit.classList.toggle('is-busy', state);
-    submit.textContent = state
-      ? (mode === 'login' ? 'Signing in…' : 'Creating…')
-      : (mode === 'login' ? 'Sign In' : 'Create Account');
+    submit.replaceChildren();
+    if (state) {
+      submit.appendChild(svg(ICON.spinner));
+      submit.appendChild(document.createTextNode(
+        mode === 'login' ? 'Signing in...' : 'Creating account...'
+      ));
+    } else {
+      submit.textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+    }
+  }
+
+  // Show the success state, then redirect to the intended destination so the
+  // logged-in state is unmistakable. Stays "busy" so the modal can't be closed
+  // out from under the redirect.
+  function showSuccessAndRedirect(forMode, user) {
+    tabs.hidden = true;
+    form.hidden = true;
+    subhead.hidden = true;
+    heading.hidden = true;
+    closeBtn.hidden = true;
+    successPanel.hidden = false;
+
+    const who = firstName(user);
+    successTitle.textContent = forMode === 'login'
+      ? (who ? `Welcome back, ${who}` : 'Welcome back')
+      : 'Account created successfully';
+    successSub.textContent = 'Taking you to the archive…';
+
+    const dest = resolveRedirect();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.setTimeout(() => { window.location.assign(dest); }, reduce ? 250 : 1100);
   }
 
   function applyMode(next) {
     mode = next;
     showError('');
+    // Restore the form view (in case a prior success swapped to the success panel)
+    successPanel.hidden = true;
+    form.hidden = false;
+    tabs.hidden = false;
+    heading.hidden = false;
+    subhead.hidden = false;
+    closeBtn.hidden = false;
     tabLogin.classList.toggle('active', mode === 'login');
     tabSignup.classList.toggle('active', mode === 'signup');
     nameField.wrap.hidden = mode === 'login';
@@ -347,14 +411,15 @@ function buildModal() {
       return;
     }
 
+    const submittedMode = mode;
     setBusy(true);
     try {
-      if (mode === 'login') {
-        await login({ email, password });
-      } else {
-        await signup({ name, email, password });
-      }
-      close();
+      const user = submittedMode === 'login'
+        ? await login({ email, password })
+        : await signup({ name, email, password });
+      // Token stored + /auth/me fetched inside login()/signup(); user is set.
+      console.log('[auth] %s success', submittedMode);
+      showSuccessAndRedirect(submittedMode, user);
     } catch (err) {
       console.error('[auth] submit failed', err);
       setBusy(false);
