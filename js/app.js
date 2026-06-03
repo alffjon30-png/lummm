@@ -7,6 +7,7 @@ import { initBooks, initBookDetail } from './books.js';
 import { initSearch } from './search.js';
 import { initAuth } from './auth.js';
 import { initFavorites } from './favorites.js';
+import { initPurchases } from './purchases.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -71,6 +72,7 @@ initBookDetail();
 initSearch();
 initAuth();
 initFavorites();
+initPurchases();
 
 const heroVideo = document.querySelector('.hero-video');
 if (heroVideo) {
