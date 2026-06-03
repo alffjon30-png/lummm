@@ -35,15 +35,16 @@ import { ensureBooks, getAllBooks, renderBookList } from './books.js';
  * cache only if a row lacks it.
  * ------------------------------------------------------------------------- */
 
-// Favourites now live in the books/auth workspace group (api:nFkvWAyl).
-// (The earlier api:bOggyrqN group was removed.) Same host → no CSP change.
+// Favourites live in their own Xano group, base id `api:favourites`, with the
+// endpoint nested at /favourites (full path api:favourites/favourites).
+// Same host → no CSP change.
 const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE
-  || 'https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl';
+  || 'https://x8ki-letl-twmt.n7.xano.io/api:favourites';
 
 // The live Xano endpoint path. The favourites API group nests the endpoint
 // under a `/favourites` base path, so the full path is `/favourites/favourites`.
 // Override with VITE_XANO_FAVORITES_PATH if it changes again.
-const FAVORITES_PATH = import.meta.env.VITE_XANO_FAVORITES_PATH || '/favourites/favourites';
+const FAVORITES_PATH = import.meta.env.VITE_XANO_FAVORITES_PATH || '/favourites';
 
 const ROUTES = {
   list:   (base) => `${base}${FAVORITES_PATH}`,                                    // GET  → the AUTHED user's rows (server-scoped)
