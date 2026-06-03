@@ -40,10 +40,15 @@ import { ensureBooks, getAllBooks, renderBookList } from './books.js';
 const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE
   || 'https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl';
 
+// The live Xano endpoint path. The favourites API group nests the endpoint
+// under a `/favourites` base path, so the full path is `/favourites/favourites`.
+// Override with VITE_XANO_FAVORITES_PATH if it changes again.
+const FAVORITES_PATH = import.meta.env.VITE_XANO_FAVORITES_PATH || '/favourites/favourites';
+
 const ROUTES = {
-  list:   (base) => `${base}/favourites`,                                    // GET  → the AUTHED user's rows (server-scoped)
-  create: (base) => `${base}/favourites`,                                    // POST { book reference } — server sets user from auth
-  remove: (base, favId) => `${base}/favourites/${encodeURIComponent(favId)}` // DELETE one favourite row by its id
+  list:   (base) => `${base}${FAVORITES_PATH}`,                                    // GET  → the AUTHED user's rows (server-scoped)
+  create: (base) => `${base}${FAVORITES_PATH}`,                                    // POST { book reference } — server sets user from auth
+  remove: (base, favId) => `${base}${FAVORITES_PATH}/${encodeURIComponent(favId)}` // DELETE one favourite row by its id
 };
 
 // Field-name mapping for the Xano columns/inputs.
