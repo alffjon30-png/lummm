@@ -35,8 +35,10 @@ import { ensureBooks, getAllBooks, renderBookList } from './books.js';
  * cache only if a row lacks it.
  * ------------------------------------------------------------------------- */
 
+// Favourites now live in the books/auth workspace group (api:nFkvWAyl).
+// (The earlier api:bOggyrqN group was removed.) Same host → no CSP change.
 const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE
-  || 'https://x8ki-letl-twmt.n7.xano.io/api:bOggyrqN';
+  || 'https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl';
 
 const ROUTES = {
   list:   (base) => `${base}/favourites`,                                    // GET  → the AUTHED user's rows (server-scoped)
