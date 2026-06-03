@@ -67,18 +67,13 @@ const FIELDS = {
 
 const REQUEST_TIMEOUT_MS = 15000;
 
-function currentUserId() {
-  const u = getCurrentUser();
-  return u && u.id != null ? idStr(u.id) : '';
-}
-
 /* ===================== state ============================================== */
 
 // bookId(string) -> favourite row id
 let favByBook = new Map();
 // bookId(string) -> embedded book record from the GET addon (for the page)
 let favBookData = new Map();
-let loadedUserId = null;   // user id that favByBook currently reflects (null = not loaded)
+let loadedForToken = null; // the auth token favByBook reflects (null = not loaded)
 let loadPromise = null;    // in-flight GET, shared so concurrent callers don't refetch
 let lastLoadError = null;  // last load failure (so the favorites page can show an error state)
 
@@ -182,17 +177,20 @@ export function getLoadError() { return lastLoadError; }
 // the many auth/render triggers don't each hit the network. Pass force=true to
 // bypass the cache (e.g. an explicit "retry").
 export function loadFavorites(force = false) {
-  const uid = currentUserId();
-  if (!uid) {
+  // Gate on the TOKEN, not the user object: GET /favourites is server-scoped by
+  // the token's auth.id, so we can fire it in parallel with /auth/me instead of
+  // waiting for the user record (which previously serialized the two calls).
+  const token = getAuthToken();
+  if (!token) {
     favByBook = new Map();
     favBookData = new Map();
-    loadedUserId = null;
+    loadedForToken = null;
     lastLoadError = null;
     emitChange();
     return Promise.resolve();
   }
   if (loadPromise) return loadPromise;
-  if (!force && loadedUserId === uid && !lastLoadError) return Promise.resolve();
+  if (!force && loadedForToken === token && !lastLoadError) return Promise.resolve();
 
   console.log('[favorites] loading from', ROUTES.list(FAVORITES_BASE));
   loadPromise = api(ROUTES.list(FAVORITES_BASE))
@@ -210,13 +208,13 @@ export function loadFavorites(force = false) {
         const obj = bookObjFromRow(row); // embedded related-book record (addon)
         if (obj) favBookData.set(bid, obj);
       });
-      loadedUserId = uid;
+      loadedForToken = token;
       lastLoadError = null;
-      console.log('[favorites] loaded', favByBook.size, 'favourites for user', uid);
+      console.log('[favorites] loaded', favByBook.size, 'favourites');
       emitChange();
     })
     .catch((err) => {
-      // Leave loadedUserId unset so an explicit retry can refetch; surface the
+      // Leave loadedForToken unset so an explicit retry can refetch; surface the
       // error so the favorites page shows an error state (not a false "empty").
       console.error('[favorites] load failed', err);
       lastLoadError = err;
@@ -418,7 +416,7 @@ function initFavoritesPage(rootEl) {
     try {
       // Only show the loading state when data isn't ready yet (avoids flicker on
       // in-place updates like unfavouriting from this page).
-      const ready = loadedUserId === currentUserId() && !lastLoadError;
+      const ready = loadedForToken === getAuthToken() && !lastLoadError;
       if (!ready) { rootEl.replaceChildren(); rootEl.dataset.state = 'loading'; }
 
       await loadFavorites(); // server-scoped; embeds the related book record
