@@ -10,6 +10,7 @@
 //   GET  /my-books                                 (auth) -> [ ... ]   (currently 400s server-side; see report)
 
 import { getAuthToken, getCurrentUser, onAuthChange, openAuthModal } from './auth.js';
+import { ensureBooks, getAllBooks } from './books.js';
 
 const PURCHASES_BASE = import.meta.env.VITE_XANO_PURCHASES_BASE
   || 'https://x8ki-letl-twmt.n7.xano.io/api:purchases';
@@ -60,6 +61,15 @@ async function api(url, opts = {}) {
 }
 
 function numify(v) { return /^\d+$/.test(String(v)) ? Number(v) : v; }
+function idStr(v) { return String(v == null ? '' : v); }
+
+function safeImageUrl(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!/^https:\/\//i.test(trimmed)) return '';
+  try { new URL(trimmed); } catch { return ''; }
+  return encodeURI(trimmed);
+}
 
 /* ===================== API ================================================ */
 
@@ -90,16 +100,47 @@ export async function createCheckout(bookId) {
   return url;
 }
 
-// The authed user's owned books. Returns [] on error (endpoint currently 400s).
+// The authed user's purchased books. Throws on error so callers can show an
+// error state; returns the raw rows on success.
 export async function fetchMyBooks() {
   if (!getAuthToken()) return [];
-  try {
-    const d = await api(ROUTES.myBooks(PURCHASES_BASE));
-    return Array.isArray(d) ? d : (d && Array.isArray(d.items) ? d.items : []);
-  } catch (err) {
-    console.error('[purchases] my-books failed', err);
-    return [];
+  const d = await api(ROUTES.myBooks(PURCHASES_BASE));
+  return Array.isArray(d) ? d : (d && Array.isArray(d.items) ? d.items : []);
+}
+
+// Extract a book-like record from a my-books row, tolerant of shape:
+// embedded object (book/_book/books), the row itself being a book, or just an id.
+function bookFromRow(row) {
+  if (!row || typeof row !== 'object') return null;
+  for (const k of ['book', '_book', 'books']) {
+    const v = row[k];
+    if (v && typeof v === 'object' && v.id != null && (v.title != null || v.coverimage != null)) return v;
   }
+  if (row.title != null || row.coverimage != null) return row; // row is the book
+  return null; // only an id — resolve from the catalog cache
+}
+function bookIdFromRow(row) {
+  if (!row || typeof row !== 'object') return '';
+  const o = bookFromRow(row);
+  if (o) return idStr(o.id);
+  for (const k of ['book', 'book_id', 'books_id', 'book_idreference_books']) {
+    if (row[k] != null && typeof row[k] !== 'object') return idStr(row[k]);
+  }
+  return '';
+}
+
+// Resolve my-books rows to full book records (using the catalog cache only when
+// a row carries just an id rather than an embedded record).
+async function resolveLibraryBooks() {
+  const rows = await fetchMyBooks();
+  if (!rows.length) return [];
+  let books = rows.map(bookFromRow);
+  if (books.some((b) => !b)) {
+    let cache = [];
+    try { cache = await ensureBooks(); } catch { cache = getAllBooks(); }
+    books = rows.map((row, i) => books[i] || cache.find((b) => idStr(b.id) === bookIdFromRow(row)) || null);
+  }
+  return books.filter(Boolean);
 }
 
 /* ===================== reader overlay (owned books) ====================== */
@@ -284,19 +325,120 @@ function enhanceDetail() {
   }
 }
 
+/* ===================== My Library page =================================== */
+
+function libraryCard(book) {
+  const card = document.createElement('article');
+  card.className = 'book lib-book';
+
+  const cover = document.createElement('div');
+  cover.className = 'cover';
+  const url = safeImageUrl(book.coverimage);
+  if (url) {
+    cover.style.setProperty('background-image',
+      `linear-gradient(180deg, rgba(7,21,30,0.15) 0%, rgba(7,21,30,0.65) 100%), url("${url}")`);
+    cover.style.backgroundSize = 'cover';
+    cover.style.backgroundPosition = 'center';
+  }
+
+  const h4 = document.createElement('h4');
+  h4.textContent = book.title || 'Untitled';
+
+  const sub = document.createElement('div');
+  sub.className = 'sub';
+  sub.textContent = [book.author, book.category].filter(Boolean).map(String).join(' · ');
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  const read = document.createElement('button');
+  read.type = 'button';
+  read.className = 'read-btn';
+  read.textContent = 'Read Book';
+  read.addEventListener('click', () => openReader({
+    title: book.title, author: book.author, body: book.description
+  }));
+  row.appendChild(read);
+
+  card.append(cover, h4, sub, row);
+  return card;
+}
+
+function initLibrary(root) {
+  function gate(message, withLogin) {
+    root.replaceChildren();
+    root.dataset.state = 'gate';
+    const wrap = document.createElement('div');
+    wrap.className = 'favorites-gate';
+    const p = document.createElement('p');
+    p.textContent = message;
+    wrap.appendChild(p);
+    if (withLogin) {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'btn btn-light'; btn.textContent = 'Sign In';
+      btn.addEventListener('click', () => openAuthModal('login'));
+      wrap.appendChild(btn);
+    } else {
+      const a = document.createElement('a');
+      a.className = 'btn btn-ghost'; a.href = 'index.html'; a.textContent = 'Browse the Archive';
+      wrap.appendChild(a);
+    }
+    root.appendChild(wrap);
+  }
+  function errorState() {
+    root.replaceChildren();
+    root.dataset.state = 'error';
+    const wrap = document.createElement('div');
+    wrap.className = 'favorites-gate';
+    const p = document.createElement('p');
+    p.textContent = 'We couldn’t load your library just now.';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn btn-light'; btn.textContent = 'Try Again';
+    btn.addEventListener('click', render);
+    wrap.append(p, btn);
+    root.appendChild(wrap);
+  }
+
+  let rendering = false;
+  async function render() {
+    if (!getAuthToken()) { gate('Sign in to view your library.', true); return; }
+    if (rendering) return;
+    rendering = true;
+    try {
+      if (root.dataset.state !== 'list') { root.replaceChildren(); root.dataset.state = 'loading'; }
+      let books;
+      try { books = await resolveLibraryBooks(); }
+      catch (err) { console.error('[purchases] library load failed', err); errorState(); return; }
+
+      if (!getAuthToken()) { gate('Sign in to view your library.', true); return; }
+      if (!books.length) { gate("You haven't purchased any books yet.", false); return; }
+
+      root.replaceChildren();
+      root.dataset.state = 'list';
+      const grid = document.createElement('div');
+      grid.className = 'catalog';
+      books.forEach((b) => grid.appendChild(libraryCard(b)));
+      root.appendChild(grid);
+    } finally {
+      rendering = false;
+    }
+  }
+
+  onAuthChange(() => { render(); });
+}
+
 /* ===================== init ============================================== */
 
 export function initPurchases() {
-  // Only relevant on pages with the book detail view.
-  if (!document.getElementById('book-detail')) return;
-
-  enhanceDetail(); // in case it's already rendered
-
-  // The detail renders async (Xano fetch) and flips data-state to "ready".
-  if ('MutationObserver' in window) {
-    const obs = new MutationObserver(() => enhanceDetail());
-    obs.observe(document.getElementById('book-detail'), {
-      childList: true, subtree: true, attributes: true, attributeFilter: ['data-state']
-    });
+  const detail = document.getElementById('book-detail');
+  if (detail) {
+    enhanceDetail(); // in case it's already rendered
+    // The detail renders async (Xano fetch) and flips data-state to "ready".
+    if ('MutationObserver' in window) {
+      const obs = new MutationObserver(() => enhanceDetail());
+      obs.observe(detail, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-state'] });
+    }
   }
+
+  const library = document.getElementById('library-root');
+  if (library) initLibrary(library);
 }

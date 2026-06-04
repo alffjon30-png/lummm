@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lumina Literature — My Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="scroll-progress" aria-hidden="true"></div>
+  <div class="app no-sidebar">
+    <header class="topbar">
+      <a class="brand" href="index.html">Lumina Literature</a>
+      <nav class="topnav">
+        <a href="index.html">Archives</a>
+        <a href="marketplace.html">Curations</a>
+      </nav>
+      <div class="topbar-right">
+        <input class="search" type="search" placeholder="Search the catalog..." maxlength="120" autocomplete="off" spellcheck="false" />
+        <button class="icon-btn" aria-label="profile">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7c1-2 2.9-3.2 5-3.2s4 1.2 5 3.2"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <header class="page-head reveal" data-reveal>
+        <div>
+          <h1>My Library</h1>
+          <p>Every volume you’ve acquired, yours to read at any time.</p>
+        </div>
+        <span class="accent-pill">Owned Volumes</span>
+      </header>
+      <div class="accent-bar reveal" data-reveal></div>
+
+      <div id="library-root" data-state="loading" aria-live="polite"></div>
+
+      <footer class="footer">
+        <div class="brand-blk">
+          Lumina Literature
+          <div class="copyright">© 2024 Lumina Literature. All Rights Reserved.</div>
+        </div>
+        <div class="links">
+          <a href="index.html">The Archives</a>
+          <a href="marketplace.html">Curations</a>
+          <a href="librarian.html">The Librarian</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

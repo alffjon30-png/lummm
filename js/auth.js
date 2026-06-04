@@ -215,7 +215,8 @@ const ICON = {
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
   spinner: '<svg class="auth-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>',
-  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>'
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+  library: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
 };
 
 function svg(markup) {
@@ -550,6 +551,15 @@ function buildAccountMenu(onLogout) {
   favLabel.textContent = 'My Favorites';
   favLink.appendChild(favLabel);
 
+  // Link to the owned-books library (logged-in only).
+  const libLink = document.createElement('a');
+  libLink.className = 'account-link';
+  libLink.href = 'library.html';
+  libLink.appendChild(svg(ICON.library));
+  const libLabel = document.createElement('span');
+  libLabel.textContent = 'My Library';
+  libLink.appendChild(libLabel);
+
   const logoutBtn = document.createElement('button');
   logoutBtn.type = 'button';
   logoutBtn.className = 'account-logout';
@@ -558,7 +568,7 @@ function buildAccountMenu(onLogout) {
   logoutLabel.textContent = 'Sign out';
   logoutBtn.appendChild(logoutLabel);
 
-  menu.append(head, favLink, logoutBtn);
+  menu.append(head, favLink, libLink, logoutBtn);
 
   logoutBtn.addEventListener('click', () => {
     onLogout();

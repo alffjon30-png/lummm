@@ -19,7 +19,8 @@ export default defineConfig({
         philosophy: resolve(__dirname, 'philosophy.html'),
         scifi: resolve(__dirname, 'scifi.html'),
         book: resolve(__dirname, 'book.html'),
-        favorites: resolve(__dirname, 'favorites.html')
+        favorites: resolve(__dirname, 'favorites.html'),
+        library: resolve(__dirname, 'library.html')
       }
     }
   }
