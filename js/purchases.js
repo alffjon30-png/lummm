@@ -4,16 +4,16 @@
 // the catalog renderer: it observes the book detail page and enhances the
 // existing action button (no books.js changes), mirroring how favorites.js works.
 //
-// Live Xano contract (api:purchases — same host as the rest, no CSP change):
+// Live Xano contract (purchases group — base from js/config.js, no CSP change):
 //   POST /create-checkout      { book_id }        (auth) -> { checkout_url, purchase_id }
 //   GET  /check-access/{id}                        (auth) -> { has_access: bool }
-//   GET  /my-books                                 (auth) -> [ ... ]   (currently 400s server-side; see report)
+//   GET  /my-books                                 (auth) -> [ ... ]
 
 import { getAuthToken, getCurrentUser, onAuthChange, openAuthModal } from './auth.js';
 import { ensureBooks, getAllBooks } from './books.js';
+import { API } from './config.js';
 
-const PURCHASES_BASE = import.meta.env.VITE_XANO_PURCHASES_BASE
-  || 'https://x8ki-letl-twmt.n7.xano.io/api:purchases';
+const PURCHASES_BASE = API.purchases;
 
 const ROUTES = {
   createCheckout: (b) => `${b}/create-checkout`,

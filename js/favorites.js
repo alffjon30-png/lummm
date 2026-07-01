@@ -19,6 +19,7 @@
 
 import { onAuthChange, getCurrentUser, getAuthToken, openAuthModal } from './auth.js';
 import { ensureBooks, getAllBooks, renderBookList } from './books.js';
+import { API, FAVORITES_PATH } from './config.js';
 
 /* ===================== CONFIG (live Xano favourites group) ================
  *
@@ -35,16 +36,9 @@ import { ensureBooks, getAllBooks, renderBookList } from './books.js';
  * cache only if a row lacks it.
  * ------------------------------------------------------------------------- */
 
-// Favourites live in their own Xano group, base id `api:favourites`, with the
-// endpoint nested at /favourites (full path api:favourites/favourites).
-// Same host → no CSP change.
-const FAVORITES_BASE = import.meta.env.VITE_XANO_FAVORITES_BASE
-  || 'https://x8ki-letl-twmt.n7.xano.io/api:favourites';
-
-// The live Xano endpoint path. The favourites API group nests the endpoint
-// under a `/favourites` base path, so the full path is `/favourites/favourites`.
-// Override with VITE_XANO_FAVORITES_PATH if it changes again.
-const FAVORITES_PATH = import.meta.env.VITE_XANO_FAVORITES_PATH || '/favourites';
+// Base URL + nested endpoint path come from the central config (js/config.js).
+// FAVORITES_PATH is imported from ./config.js.
+const FAVORITES_BASE = API.favourites;
 
 const ROUTES = {
   list:   (base) => `${base}${FAVORITES_PATH}`,                                    // GET  → the AUTHED user's rows (server-scoped)

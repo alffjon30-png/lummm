@@ -8,11 +8,11 @@
 // CLAUDE.md — never localStorage). Survives page refresh and same-tab
 // navigation across the multi-page site, which keeps the user logged in.
 
-// Auth lives in its OWN Xano API group (api:WitMFOZH), separate from the
-// books group (api:nFkvWAyl). Same host, so no CSP change is needed.
-// Override with VITE_XANO_AUTH_BASE if you spin up a different workspace.
-const AUTH_BASE = import.meta.env.VITE_XANO_AUTH_BASE
-  || 'https://x8ki-letl-twmt.n7.xano.io/api:WitMFOZH';
+// Auth API base comes from the central config (js/config.js) — the only place
+// Xano group ids live. Override the group there or via VITE_XANO_AUTH_BASE.
+import { API } from './config.js';
+
+const AUTH_BASE = API.auth;
 
 const TOKEN_KEY = 'lumina_auth_token';
 

@@ -1,5 +1,6 @@
-const API_BASE = import.meta.env.VITE_XANO_API_BASE
-  || 'https://x8ki-letl-twmt.n7.xano.io/api:nFkvWAyl';
+import { API } from './config.js';
+
+const API_BASE = API.books;
 
 const PLACEHOLDER_CARD_COUNT = 4;
 
